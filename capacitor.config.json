@@ -1,0 +1,9 @@
+{
+  "appId": "com.mnsproject.mnsdsp",
+  "appName": "Goro Ganteng",
+  "webDir": "www",
+  "backgroundColor": "#121317",
+  "android": {
+    "allowMixedContent": false
+  }
+}

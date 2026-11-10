@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Follow tiktok MNSProject Soundminiproject - Advanced Video DSP</title>
+    <style>
+        :root {
+            --bg-dark: #121317;
+            --panel-bg: #1e1f26;
+            --text-main: #cdd6f4;
+            --text-muted: #6c7086;
+            --accent-blue: #89b4fa;
+            --accent-yellow: #f9e2af;
+            --accent-red: #f38ba8;
+            --accent-green: #a6e3a1;
+            --knob-bg: linear-gradient(135deg, #e0e0e0, #888);
+            --border-color: #313244;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+        body { background-color: var(--bg-dark); color: var(--text-main); padding: 20px; overscroll-behavior-y: contain; }
+
+        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+
+        /* HEADER */
+        .header { text-align: center; padding: 15px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; }
+        .header h1 { color: var(--accent-blue); font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
+        .header p { color: var(--text-muted); font-size: 0.9rem; letter-spacing: 1px; }
+
+        /* MEDIA SECTION */
+        .media-section { display: flex; gap: 15px; flex-wrap: wrap; }
+        
+        /* ANALYZER & VU BOX (Posisi Baru) */
+        .media-player-box { flex: 1; min-width: 300px; background: #0b0c10; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; position: relative; min-height: 250px; padding: 10px; gap: 10px; }
+        canvas { width: 100%; height: 100%; background: #0b0c10; border-radius: 4px; display: block; }
+        .master-vu-wrapper { display: flex; gap: 8px; width: 36px; height: 100%; padding: 5px; background: #11111b; border-radius: 4px; border: 1px solid #222; justify-content: center; }
+        
+        .media-controls { flex: 1; min-width: 300px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .btn { background: #313244; color: var(--text-main); border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; text-transform: uppercase; font-size: 0.8rem; }
+        .btn:hover { background: var(--accent-blue); color: #000; }
+        .file-input-wrapper { display: flex; gap: 10px; align-items: center; }
+        .file-name-display { flex: 1; font-family: monospace; color: var(--accent-blue); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* PLAYLIST */
+        .playlist-container { background: #11111b; border: 1px solid var(--border-color); border-radius: 6px; padding: 5px; max-height: 120px; overflow-y: auto; }
+        .playlist-item { padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; transition: 0.2s; }
+        .playlist-item:hover:not(.active) { background: #252636; }
+        .playlist-item.active { background: var(--accent-blue); color: #11111b; font-weight: bold; }
+
+        /* VIDEO BOX (Posisi Baru) */
+        .video-box { background: #000; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 350px; }
+        video { width: 100%; height: 100%; object-fit: contain; display: block; }
+        
+        /* DSP PANELS */
+        .dsp-panels { display: flex; gap: 15px; flex-wrap: wrap; align-items: stretch; }
+        .dsp-module { flex: 1; min-width: 340px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+        
+        .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .module-title { font-size: 1rem; color: var(--accent-yellow); text-transform: uppercase; font-weight: bold; }
+        
+        /* SECTION HEADERS */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px 0; border-bottom: 1px dashed #333; padding-bottom: 5px; }
+        .sub-title { font-size: 0.75rem; color: var(--accent-green); text-transform: uppercase; margin: 0; font-weight: bold; }
+        .flat-btn { padding: 4px 10px; font-size: 0.65rem; background: #252636; border: 1px solid #444; color: var(--accent-yellow); border-radius: 4px; cursor: pointer; transition: 0.2s;}
+        .flat-btn:hover { background: var(--accent-yellow); color: #000; }
+        .flat-btn.bypassed { background: var(--accent-red); color: #111; border-color: var(--accent-red); }
+
+        /* EQ TAB SWITCH BUTTONS */
+        .eq-tabs { display: flex; gap: 4px; }
+        .eq-tab-btn { padding: 3px 8px; font-size: 0.65rem; background: #11111b; border: 1px solid #444; color: var(--text-muted); border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .eq-tab-btn:hover { background: #252636; color: var(--text-main); }
+        .eq-tab-btn.active { background: var(--accent-blue); color: #000; border-color: var(--accent-blue); }
+
+        .mute-btn { padding: 5px 12px; font-size: 0.75rem; border-radius: 4px; letter-spacing: 1px; }
+        .mute-btn.active { background: var(--accent-red); color: #111; box-shadow: 0 0 8px rgba(243, 139, 168, 0.5); }
+
+        .knob-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; flex-grow: 1; }
+        .knob-container { display: flex; flex-direction: column; align-items: center; width: 75px; position: relative; }
+        .knob-label { font-size: 0.7rem; color: var(--text-muted); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; text-align: center; height: 16px; }
+        
+        /* KNOBS */
+        .knob {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--knob-bg);
+            border: 2px solid #111;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4);
+            position: relative; cursor: ns-resize;
+            transform: rotate(-135deg); touch-action: none; 
+        }
+        .knob-pointer {
+            position: absolute; width: 4px; height: 16px; background: #111;
+            top: 2px; left: 50%; transform: translateX(-50%); border-radius: 2px;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);
+        }
+        
+        /* EDITABLE KNOB/FADER VALUE */
+        .knob-value { 
+            font-family: monospace; font-size: 0.85rem; color: var(--text-main); 
+            margin-top: 10px; background: #111; padding: 4px 6px; 
+            border-radius: 4px; border: 1px solid #222; width: 100%; 
+            text-align: center; cursor: text; outline: none; user-select: auto; -webkit-user-select: auto;
+        }
+        .knob-value:focus { border-color: var(--accent-blue); background: #1a1a24; }
+
+        /* VINTAGE COMPRESSOR LAYOUT */
+        .comp-layout {
+            display: flex; gap: 10px; background: #2a2b36; padding: 15px;
+            border-radius: 8px; border: 1px solid #111;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            align-items: center; flex-wrap: wrap; justify-content: center;
+        }
+        .comp-knobs { display: flex; gap: 10px; flex: 1; min-width: 200px; justify-content: space-around; }
+        
+        .led-container { position: absolute; top: -18px; display: flex; gap: 8px; justify-content: center; width: 100%; }
+        .led-wrapper { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .led-wrapper span { font-size: 0.45rem; color: var(--text-muted); font-weight: bold; }
+        .led { width: 8px; height: 8px; border-radius: 50%; background: #333; box-shadow: inset 0 1px 3px rgba(0,0,0,0.8); transition: 0.1s; }
+        .led.led-below.active { background: #f9a826; box-shadow: 0 0 6px #f9a826, inset 0 1px 2px rgba(255,255,255,0.4); }
+        .led.led-above.active { background: #f38ba8; box-shadow: 0 0 6px #f38ba8, inset 0 1px 2px rgba(255,255,255,0.4); }
+
+        .vintage-vu-box {
+            width: 140px; height: 80px;
+            background: linear-gradient(180deg, #f0c978 0%, #c49651 100%);
+            border: 8px solid #111; border-radius: 4px;
+            position: relative; overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .vintage-vu-needle {
+            position: absolute; bottom: -8px; left: 50%;
+            width: 2px; height: 60px; background: #111;
+            transform-origin: bottom center; transform: rotate(45deg);
+            transition: transform 0.05s ease-out; margin-left: -1px;
+            box-shadow: 1px 0 2px rgba(0,0,0,0.4); z-index: 2;
+        }
+        .vintage-vu-label {
+            position: absolute; bottom: 3px; width: 100%; text-align: center;
+            font-size: 0.5rem; color: #443311; font-weight: bold; letter-spacing: 1px; z-index: 1;
+        }
+
+        /* SELECTORS */
+        .selector-row { display: flex; gap: 10px; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-wrap: wrap; }
+        .selector-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 90px; }
+        .selector-group label { font-size: 0.65rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
+        select { background: #313244; color: var(--text-main); border: 1px solid var(--border-color); padding: 6px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; outline: none; }
+        select:focus { border-color: var(--accent-blue); }
+
+        /* VU METERS */
+        .vu-meter { width: 10px; height: 100%; background: #0b0c10; border: 1px solid #222; border-radius: 2px; display: flex; align-items: flex-end; overflow: hidden; }
+        .vu-fill { 
+            width: 100%; height: 0%; 
+            background: linear-gradient(to top, var(--accent-green) 0%, var(--accent-green) 60%, var(--accent-yellow) 60%, var(--accent-yellow) 85%, var(--accent-red) 85%, var(--accent-red) 100%);
+            transition: height 0.05s linear;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Follow tiktok MNSProject</h1>
+        <p>Soundminiproject • Advanced Media DSP</p>
+    </div>
+
+    <div class="media-section">
+        <div class="media-player-box">
+            <div style="flex: 1; height: 100%; width: 100%;">
+                <canvas id="analyzer"></canvas>
+            </div>
+            <div class="master-vu-wrapper">
+                <div class="vu-meter" title="Left"><div class="vu-fill" id="vu-l"></div></div>
+                <div class="vu-meter" title="Right"><div class="vu-fill" id="vu-r"></div></div>
+            </div>
+        </div>
+        <div class="media-controls">
+            <div class="file-input-wrapper">
+                <input type="file" id="file-upload" accept="audio/*, video/*" multiple style="display: none;">
+                <button class="btn" onclick="document.getElementById('file-upload').click()">Load Files (Multi Playlist)</button>
+                <div class="file-name-display" id="file-name">No files loaded</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" id="btn-prev">Prev</button>
+                <button class="btn" id="btn-play">Play</button>
+                <button class="btn" id="btn-pause">Pause</button>
+                <button class="btn" id="btn-next">Next</button>
+            </div>
+            <div class="playlist-container" id="playlist-box">
+                <div style="color: var(--text-muted); text-align: center; font-size: 0.85rem; padding: 10px;">Playlist Kosong</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="video-box">
+        <video id="media-element" controls></video>
+    </div>
+
+    <div class="dsp-panels">
+        <div class="dsp-module">
+            <div class="module-header">
+                <div class="module-title">Sub / Low Crossover</div>
+                <button class="btn mute-btn" id="mute-sub">MUTE</button>
+            </div>
+            <div class="knob-row">
+                <div class="knob-container">
+                    <div class="knob-label">HPF Freq</div>
+                    <div class="knob" id="knob-sub-hpf" data-min="20" data-max="200" data-val="30" data-step="1">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-hpf" value="30 Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">LPF Freq</div>
+                    <div class="knob" id="knob-sub-lpf" data-min="40" data-max="300" data-val="100" data-step="1">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-lpf" value="100 Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Out Gain</div>
+                    <div class="knob" id="knob-sub-gain" data-min="-24" data-max="12" data-val="0" data-step="0.5">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-gain" value="0 dB">
+                </div>
+            </div>
+
+            <div class="selector-row">
+                <div class="selector-group">
+                    <label>HPF Slope</label>
+                    <select id="select-sub-hpf-slope"><option value="12">12 dB/oct</option><option value="24" selected>24 dB/oct</option><option value="36">36 dB/oct</option><option value="48">48 dB/oct</option></select>
+                </div>
+                <div class="selector-group">
+                    <label>LPF Slope</label>
+                    <select id="select-sub-lpf-slope"><option value="12">12 dB/oct</option><option value="24" selected>24 dB/oct</option><option value="36">36 dB/oct</option><option value="48">48 dB/oct</option></select>
+                </div>
+                <div class="selector-group">
+                    <label>Channel</label>
+                    <select id="select-sub-chan"><option value="stereo" selected>Stereo</option><option value="L">Left (L)</option><option value="R">Right (R)</option></select>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div class="sub-title">Sub Parametric EQ</div>
+                <button class="btn flat-btn" id="flat-sub">FLAT</button>
+            </div>
+            <div class="knob-row">
+                <div class="knob-container">
+                    <div class="knob-label">EQ Freq</div>
+                    <div class="knob" id="knob-sub-eq-freq" data-min="20" data-max="200" data-val="60" data-step="1">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-eq-freq" value="60 Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">EQ Gain</div>
+                    <div class="knob" id="knob-sub-eq-gain" data-min="-15" data-max="15" data-val="0" data-step="0.5">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-eq-gain" value="0 dB">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">EQ Q</div>
+                    <div class="knob" id="knob-sub-eq-q" data-min="0.1" data-max="10" data-val="1" data-step="0.1">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-sub-eq-q" value="1.0">
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div class="sub-title">16VU Comp-Limiter (Sub)</div>
+                <button class="btn flat-btn" id="bypass-sub-comp">BYPASS</button>
+            </div>
+            
+            <div class="comp-layout">
+                <div class="comp-knobs">
+                    <div class="knob-container">
+                        <div class="led-container">
+                            <div class="led-wrapper"><span>BELOW</span><div class="led led-below active" id="led-sub-below"></div></div>
+                            <div class="led-wrapper"><span>ABOVE</span><div class="led led-above" id="led-sub-above"></div></div>
+                        </div>
+                        <div class="knob-label">Threshold</div>
+                        <div class="knob" id="knob-sub-comp-thresh" data-min="-46" data-max="0" data-val="0" data-step="1">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-sub-comp-thresh" value="0 dB">
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-label">Ratio</div>
+                        <div class="knob" id="knob-sub-comp-ratio" data-min="1" data-max="20" data-val="1" data-step="0.5">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-sub-comp-ratio" value="1.0 : 1">
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-label">Gain</div>
+                        <div class="knob" id="knob-sub-comp-gain" data-min="-18" data-max="18" data-val="0" data-step="0.5">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-sub-comp-gain" value="0 dB">
+                    </div>
+                </div>
+                
+                <div class="vintage-vu-box">
+                    <svg width="100%" height="100%" viewBox="0 0 140 80" style="position:absolute; top:0; left:0;">
+                        <path d="M 20 60 Q 70 15 120 60" fill="none" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="20" y1="60" x2="18" y2="56" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="42" y1="42" x2="40" y2="38" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="70" y1="31" x2="70" y2="27" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="98" y1="42" x2="100" y2="38" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="120" y1="60" x2="122" y2="56" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <text x="7" y="70" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-20</text>
+                        <text x="32" y="52" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-15</text>
+                        <text x="63" y="42" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-10</text>
+                        <text x="96" y="52" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-5</text>
+                        <text x="123" y="70" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">0</text>
+                    </svg>
+                    <div class="vintage-vu-needle" id="needle-sub-gr"></div>
+                    <div class="vintage-vu-label">DECIBELS</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dsp-module">
+            <div class="module-header">
+                <div class="module-title">Mid / High Crossover</div>
+                <button class="btn mute-btn" id="mute-mid">MUTE</button>
+            </div>
+            <div class="knob-row">
+                <div class="knob-container">
+                    <div class="knob-label">HPF Freq</div>
+                    <div class="knob" id="knob-mid-hpf" data-min="80" data-max="5000" data-val="100" data-step="10" data-log="true">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-hpf" value="100 Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">LPF Freq</div>
+                    <div class="knob" id="knob-mid-lpf" data-min="1000" data-max="20000" data-val="20000" data-step="100" data-log="true">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-lpf" value="20k Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">Out Gain</div>
+                    <div class="knob" id="knob-mid-gain" data-min="-24" data-max="12" data-val="0" data-step="0.5">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-gain" value="0 dB">
+                </div>
+            </div>
+
+            <div class="selector-row">
+                <div class="selector-group">
+                    <label>HPF Slope</label>
+                    <select id="select-mid-hpf-slope"><option value="12">12 dB/oct</option><option value="24" selected>24 dB/oct</option><option value="36">36 dB/oct</option><option value="48">48 dB/oct</option></select>
+                </div>
+                <div class="selector-group">
+                    <label>LPF Slope</label>
+                    <select id="select-mid-lpf-slope"><option value="12">12 dB/oct</option><option value="24" selected>24 dB/oct</option><option value="36">36 dB/oct</option><option value="48">48 dB/oct</option></select>
+                </div>
+                <div class="selector-group">
+                    <label>Channel</label>
+                    <select id="select-mid-chan"><option value="stereo" selected>Stereo</option><option value="L">Left (L)</option><option value="R">Right (R)</option></select>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="sub-title">Mid Parametric EQ</div>
+                    <div class="eq-tabs">
+                        <button class="eq-tab-btn active" onclick="switchMidEQ(0)">EQ 1</button>
+                        <button class="eq-tab-btn" onclick="switchMidEQ(1)">EQ 2</button>
+                        <button class="eq-tab-btn" onclick="switchMidEQ(2)">EQ 3</button>
+                    </div>
+                </div>
+                <button class="btn flat-btn" id="flat-mid">FLAT ALL</button>
+            </div>
+            <div class="knob-row">
+                <div class="knob-container">
+                    <div class="knob-label">EQ Freq</div>
+                    <div class="knob" id="knob-mid-eq-freq" data-min="100" data-max="15000" data-val="500" data-step="10" data-log="true">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-eq-freq" value="500 Hz">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">EQ Gain</div>
+                    <div class="knob" id="knob-mid-eq-gain" data-min="-15" data-max="15" data-val="0" data-step="0.5">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-eq-gain" value="0 dB">
+                </div>
+                <div class="knob-container">
+                    <div class="knob-label">EQ Q</div>
+                    <div class="knob" id="knob-mid-eq-q" data-min="0.1" data-max="10" data-val="1" data-step="0.1">
+                        <div class="knob-pointer"></div>
+                    </div>
+                    <input type="text" class="knob-value" id="val-mid-eq-q" value="1.0">
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div class="sub-title">16VU Comp-Limiter (Mid)</div>
+                <button class="btn flat-btn" id="bypass-mid-comp">BYPASS</button>
+            </div>
+            
+            <div class="comp-layout">
+                <div class="comp-knobs">
+                    <div class="knob-container">
+                        <div class="led-container">
+                            <div class="led-wrapper"><span>BELOW</span><div class="led led-below active" id="led-mid-below"></div></div>
+                            <div class="led-wrapper"><span>ABOVE</span><div class="led led-above" id="led-mid-above"></div></div>
+                        </div>
+                        <div class="knob-label">Threshold</div>
+                        <div class="knob" id="knob-mid-comp-thresh" data-min="-46" data-max="0" data-val="0" data-step="1">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-mid-comp-thresh" value="0 dB">
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-label">Ratio</div>
+                        <div class="knob" id="knob-mid-comp-ratio" data-min="1" data-max="20" data-val="1" data-step="0.5">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-mid-comp-ratio" value="1.0 : 1">
+                    </div>
+                    <div class="knob-container">
+                        <div class="knob-label">Gain</div>
+                        <div class="knob" id="knob-mid-comp-gain" data-min="-18" data-max="18" data-val="0" data-step="0.5">
+                            <div class="knob-pointer"></div>
+                        </div>
+                        <input type="text" class="knob-value" id="val-mid-comp-gain" value="0 dB">
+                    </div>
+                </div>
+                
+                <div class="vintage-vu-box">
+                    <svg width="100%" height="100%" viewBox="0 0 140 80" style="position:absolute; top:0; left:0;">
+                        <path d="M 20 60 Q 70 15 120 60" fill="none" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="20" y1="60" x2="18" y2="56" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="42" y1="42" x2="40" y2="38" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="70" y1="31" x2="70" y2="27" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="98" y1="42" x2="100" y2="38" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <line x1="120" y1="60" x2="122" y2="56" stroke="#6b4c1a" stroke-width="1.5"/>
+                        <text x="7" y="70" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-20</text>
+                        <text x="32" y="52" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-15</text>
+                        <text x="63" y="42" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-10</text>
+                        <text x="96" y="52" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">-5</text>
+                        <text x="123" y="70" font-family="sans-serif" font-size="8" fill="#6b4c1a" font-weight="bold">0</text>
+                    </svg>
+                    <div class="vintage-vu-needle" id="needle-mid-gr"></div>
+                    <div class="vintage-vu-label">DECIBELS</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. AUDIO CONTEXT & ROUTING ENGINE ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioContext();
+    const mediaEl = document.getElementById('media-element');
+    let sourceNode;
+
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 4096;
+    analyser.smoothingTimeConstant = 0.85;
+
+    const masterLimiter = ctx.createDynamicsCompressor();
+    masterLimiter.threshold.value = -0.5; 
+    masterLimiter.knee.value = 0;
+    masterLimiter.ratio.value = 20; 
+    masterLimiter.attack.value = 0.005;
+    masterLimiter.release.value = 0.1;
+
+    // --- MASTER OUT L & R NODES (Audio processing intact for VU Meter) ---
+    const masterSplitter = ctx.createChannelSplitter(2);
+    const masterMerger = ctx.createChannelMerger(2);
+    const masterGainL = ctx.createGain(); 
+    const masterGainR = ctx.createGain();
+    const masterMuteL = ctx.createGain(); 
+    const masterMuteR = ctx.createGain(); 
+    const vuAnalyserL = ctx.createAnalyser(); vuAnalyserL.fftSize = 512;
+    const vuAnalyserR = ctx.createAnalyser(); vuAnalyserR.fftSize = 512;
+
+    // Sub Nodes
+    const subHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = 0.707; return f; });
+    const subLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.707; return f; });
+    const subEQ = ctx.createBiquadFilter(); subEQ.type = 'peaking'; subEQ.frequency.value = 60; subEQ.gain.value = 0; subEQ.Q.value = 1.0;
+    const subSplit = ctx.createChannelSplitter(2); const subMerge = ctx.createChannelMerger(2);
+    const subGainL = ctx.createGain(); const subGainR = ctx.createGain();
+    const subGain = ctx.createGain(); const subMute = ctx.createGain();
+
+    // Sub Compressor Nodes
+    const subComp = ctx.createDynamicsCompressor(); subComp.threshold.value = 0; subComp.ratio.value = 1; subComp.knee.value = 10;
+    const subCompMakeup = ctx.createGain();
+    const subCompDry = ctx.createGain(); subCompDry.gain.value = 0; 
+    const subCompWet = ctx.createGain(); subCompWet.gain.value = 1;
+    const subCompOut = ctx.createGain();
+
+    // Mid Nodes (Diupgrade menjadi 3-Band EQ dalam susunan serial)
+    const midHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = 0.707; return f; });
+    const midLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.707; return f; });
+    const midEQ = Array.from({length: 3}, (_, i) => {
+        let f = ctx.createBiquadFilter(); f.type = 'peaking';
+        f.frequency.value = i === 0 ? 500 : (i === 1 ? 1500 : 5000);
+        f.gain.value = 0; f.Q.value = 1.0; return f;
+    });
+    const midSplit = ctx.createChannelSplitter(2); const midMerge = ctx.createChannelMerger(2);
+    const midGainL = ctx.createGain(); const midGainR = ctx.createGain();
+    const midGain = ctx.createGain(); const midMute = ctx.createGain();
+
+    // Mid Compressor Nodes
+    const midComp = ctx.createDynamicsCompressor(); midComp.threshold.value = 0; midComp.ratio.value = 1; midComp.knee.value = 10;
+    const midCompMakeup = ctx.createGain();
+    const midCompDry = ctx.createGain(); midCompDry.gain.value = 0; 
+    const midCompWet = ctx.createGain(); midCompWet.gain.value = 1;
+    const midCompOut = ctx.createGain();
+
+    // Routing
+    for(let i=0; i<3; i++) {
+        subHPF[i].connect(subHPF[i+1]); subLPF[i].connect(subLPF[i+1]);
+        midHPF[i].connect(midHPF[i+1]); midLPF[i].connect(midLPF[i+1]);
+    }
+    
+    subHPF[3].connect(subLPF[0]); subLPF[3].connect(subEQ); subEQ.connect(subSplit);
+    subSplit.connect(subGainL, 0, 0); subSplit.connect(subGainR, 1, 0);
+    subGainL.connect(subMerge, 0, 0); subGainR.connect(subMerge, 0, 1);
+    subMerge.connect(subGain); 
+    
+    subGain.connect(subComp); subGain.connect(subCompDry);
+    subComp.connect(subCompMakeup); subCompMakeup.connect(subCompWet);
+    subCompWet.connect(subCompOut); subCompDry.connect(subCompOut);
+    subCompOut.connect(subMute);
+
+    // Mid Routing: HPF -> LPF -> EQ1 -> EQ2 -> EQ3 -> Split -> ...
+    midHPF[3].connect(midLPF[0]); midLPF[3].connect(midEQ[0]);
+    midEQ[0].connect(midEQ[1]); midEQ[1].connect(midEQ[2]); midEQ[2].connect(midSplit);
+    midSplit.connect(midGainL, 0, 0); midSplit.connect(midGainR, 1, 0);
+    midGainL.connect(midMerge, 0, 0); midGainR.connect(midMerge, 0, 1);
+    midMerge.connect(midGain); 
+    
+    midGain.connect(midComp); midGain.connect(midCompDry);
+    midComp.connect(midCompMakeup); midCompMakeup.connect(midCompWet);
+    midCompWet.connect(midCompOut); midCompDry.connect(midCompOut);
+    midCompOut.connect(midMute);
+
+    let currentParams = {
+        subHPF: 30, subLPF: 100, subSlopeHPF: 24, subSlopeLPF: 24, subChan: 'stereo', subIsMuted: false, subCompBypassed: false,
+        midHPF: 100, midLPF: 20000, midSlopeHPF: 24, midSlopeLPF: 24, midChan: 'stereo', midIsMuted: false, midCompBypassed: false,
+        activeMidEQ: 0,
+        midEQParams: [
+            { freq: 500, gain: 0, q: 1.0 },
+            { freq: 1500, gain: 0, q: 1.0 },
+            { freq: 5000, gain: 0, q: 1.0 }
+        ]
+    };
+
+    const T_CONST = 0.05; 
+    function updateSubHPF() { let count = currentParams.subSlopeHPF / 12; let t = ctx.currentTime; for(let i=0; i<4; i++) subHPF[i].frequency.setTargetAtTime(i < count ? currentParams.subHPF : 10, t, T_CONST); }
+    function updateSubLPF() { let count = currentParams.subSlopeLPF / 12; let t = ctx.currentTime; for(let i=0; i<4; i++) subLPF[i].frequency.setTargetAtTime(i < count ? currentParams.subLPF : 22000, t, T_CONST); }
+    function updateMidHPF() { let count = currentParams.midSlopeHPF / 12; let t = ctx.currentTime; for(let i=0; i<4; i++) midHPF[i].frequency.setTargetAtTime(i < count ? currentParams.midHPF : 10, t, T_CONST); }
+    function updateMidLPF() { let count = currentParams.midSlopeLPF / 12; let t = ctx.currentTime; for(let i=0; i<4; i++) midLPF[i].frequency.setTargetAtTime(i < count ? currentParams.midLPF : 22000, t, T_CONST); }
+    
+    function updateChannelRouting() {
+        let t = ctx.currentTime;
+        subGainL.gain.setTargetAtTime((currentParams.subChan === 'stereo' || currentParams.subChan === 'L') ? 1 : 0, t, T_CONST);
+        subGainR.gain.setTargetAtTime((currentParams.subChan === 'stereo' || currentParams.subChan === 'R') ? 1 : 0, t, T_CONST);
+        midGainL.gain.setTargetAtTime((currentParams.midChan === 'stereo' || currentParams.midChan === 'L') ? 1 : 0, t, T_CONST);
+        midGainR.gain.setTargetAtTime((currentParams.midChan === 'stereo' || currentParams.midChan === 'R') ? 1 : 0, t, T_CONST);
+    }
+
+    const dbToGain = db => Math.pow(10, db / 20);
+
+    masterSplitter.connect(masterGainL, 0); 
+    masterSplitter.connect(masterGainR, 1);
+    masterGainL.connect(masterMuteL);
+    masterGainR.connect(masterMuteR);
+    masterMuteL.connect(vuAnalyserL);
+    masterMuteR.connect(vuAnalyserR);
+    vuAnalyserL.connect(masterMerger, 0, 0);
+    vuAnalyserR.connect(masterMerger, 0, 1);
+    masterMerger.connect(analyser);
+    
+    function setupAudioRouting() {
+        if(!sourceNode) {
+            sourceNode = ctx.createMediaElementSource(mediaEl);
+            sourceNode.connect(subHPF[0]);
+            sourceNode.connect(midHPF[0]);
+
+            subMute.connect(masterLimiter);
+            midMute.connect(masterLimiter);
+            
+            masterLimiter.connect(masterSplitter);
+            analyser.connect(ctx.destination);
+
+            updateSubHPF(); updateSubLPF();
+            updateMidHPF(); updateMidLPF();
+            updateChannelRouting();
+        }
+    }
+
+    // --- SWITCH MID EQ TABS LOGIC ---
+    window.switchMidEQ = function(index) {
+        currentParams.activeMidEQ = index;
+        document.querySelectorAll('.eq-tabs .eq-tab-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', i === index);
+        });
+        let p = currentParams.midEQParams[index];
+        
+        let fKnob = document.getElementById('knob-mid-eq-freq');
+        fKnob.setAttribute('data-val', p.freq); updateKnobVisual(fKnob, p.freq);
+        let gKnob = document.getElementById('knob-mid-eq-gain');
+        gKnob.setAttribute('data-val', p.gain); updateKnobVisual(gKnob, p.gain);
+        let qKnob = document.getElementById('knob-mid-eq-q');
+        qKnob.setAttribute('data-val', p.q); updateKnobVisual(qKnob, p.q);
+    };
+
+    // --- MUTE & BYPASS ---
+    document.getElementById('mute-sub').addEventListener('click', function() {
+        currentParams.subIsMuted = !currentParams.subIsMuted; this.classList.toggle('active', currentParams.subIsMuted);
+        subMute.gain.setTargetAtTime(currentParams.subIsMuted ? 0 : 1, ctx.currentTime, 0.05);
+    });
+    document.getElementById('mute-mid').addEventListener('click', function() {
+        currentParams.midIsMuted = !currentParams.midIsMuted; this.classList.toggle('active', currentParams.midIsMuted);
+        midMute.gain.setTargetAtTime(currentParams.midIsMuted ? 0 : 1, ctx.currentTime, 0.05);
+    });
+    document.getElementById('bypass-sub-comp').addEventListener('click', function() {
+        currentParams.subCompBypassed = !currentParams.subCompBypassed; this.classList.toggle('bypassed', currentParams.subCompBypassed);
+        subCompDry.gain.setTargetAtTime(currentParams.subCompBypassed ? 1 : 0, ctx.currentTime, 0.05);
+        subCompWet.gain.setTargetAtTime(currentParams.subCompBypassed ? 0 : 1, ctx.currentTime, 0.05);
+    });
+    document.getElementById('bypass-mid-comp').addEventListener('click', function() {
+        currentParams.midCompBypassed = !currentParams.midCompBypassed; this.classList.toggle('bypassed', currentParams.midCompBypassed);
+        midCompDry.gain.setTargetAtTime(currentParams.midCompBypassed ? 1 : 0, ctx.currentTime, 0.05);
+        midCompWet.gain.setTargetAtTime(currentParams.midCompBypassed ? 0 : 1, ctx.currentTime, 0.05);
+    });
+
+    // --- PLAYLIST ---
+    let playlist = []; let currentTrackIdx = 0;
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const files = Array.from(e.target.files); if(files.length === 0) return;
+        files.forEach(file => { playlist.push({ name: file.name, url: URL.createObjectURL(file) }); });
+        renderPlaylist();
+        if(mediaEl.src === "" || mediaEl.paused) loadTrack(playlist.length - files.length);
+    });
+
+    function renderPlaylist() {
+        const pBox = document.getElementById('playlist-box');
+        if(playlist.length === 0) { pBox.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:10px;">Playlist Kosong</div>`; return; }
+        pBox.innerHTML = "";
+        playlist.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = `playlist-item ${index === currentTrackIdx ? 'active' : ''}`;
+            item.innerHTML = `<span>${index + 1}. ${track.name}</span>`;
+            item.onclick = () => loadTrack(index);
+            pBox.appendChild(item);
+        });
+        document.getElementById('file-name').innerText = `${playlist.length} track(s) loaded`;
+    }
+
+    function loadTrack(index) {
+        if(index < 0 || index >= playlist.length) return;
+        currentTrackIdx = index; renderPlaylist();
+        mediaEl.src = playlist[currentTrackIdx].url;
+        setupAudioRouting();
+        mediaEl.play().then(() => { if (ctx.state === 'suspended') ctx.resume(); }).catch(err => console.log(err));
+    }
+    document.getElementById('btn-play').onclick = () => { if(playlist.length > 0) { if(ctx.state === 'suspended') ctx.resume(); mediaEl.play(); setupAudioRouting(); } };
+    document.getElementById('btn-pause').onclick = () => mediaEl.pause();
+    document.getElementById('btn-prev').onclick = () => { if(currentTrackIdx > 0) loadTrack(currentTrackIdx - 1); };
+    document.getElementById('btn-next').onclick = () => { if(currentTrackIdx < playlist.length - 1) loadTrack(currentTrackIdx + 1); };
+    mediaEl.addEventListener('ended', () => { if(currentTrackIdx < playlist.length - 1) loadTrack(currentTrackIdx + 1); });
+
+    document.getElementById('select-sub-hpf-slope').onchange = (e) => { currentParams.subSlopeHPF = parseInt(e.target.value); updateSubHPF(); };
+    document.getElementById('select-sub-lpf-slope').onchange = (e) => { currentParams.subSlopeLPF = parseInt(e.target.value); updateSubLPF(); };
+    document.getElementById('select-sub-chan').onchange = (e) => { currentParams.subChan = e.target.value; updateChannelRouting(); };
+    document.getElementById('select-mid-hpf-slope').onchange = (e) => { currentParams.midSlopeHPF = parseInt(e.target.value); updateMidHPF(); };
+    document.getElementById('select-mid-lpf-slope').onchange = (e) => { currentParams.midSlopeLPF = parseInt(e.target.value); updateMidLPF(); };
+    document.getElementById('select-mid-chan').onchange = (e) => { currentParams.midChan = e.target.value; updateChannelRouting(); };
+
+    // --- CUSTOM KNOBS & AUDIO MAPPING ---
+    function applyParamToAudio(knobId, val) {
+        if(knobId === 'knob-sub-hpf') { currentParams.subHPF = val; updateSubHPF(); }
+        if(knobId === 'knob-sub-lpf') { currentParams.subLPF = val; updateSubLPF(); }
+        if(knobId === 'knob-sub-gain') subGain.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+        if(knobId === 'knob-mid-hpf') { currentParams.midHPF = val; updateMidHPF(); }
+        if(knobId === 'knob-mid-lpf') { currentParams.midLPF = val; updateMidLPF(); }
+        if(knobId === 'knob-mid-gain') midGain.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+        
+        if(knobId === 'knob-sub-eq-freq') subEQ.frequency.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-sub-eq-gain') subEQ.gain.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-sub-eq-q') subEQ.Q.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        
+        // Dynamic Mid EQ Mapping
+        if(knobId === 'knob-mid-eq-freq') {
+            let idx = currentParams.activeMidEQ; currentParams.midEQParams[idx].freq = val;
+            midEQ[idx].frequency.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        }
+        if(knobId === 'knob-mid-eq-gain') {
+            let idx = currentParams.activeMidEQ; currentParams.midEQParams[idx].gain = val;
+            midEQ[idx].gain.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        }
+        if(knobId === 'knob-mid-eq-q') {
+            let idx = currentParams.activeMidEQ; currentParams.midEQParams[idx].q = val;
+            midEQ[idx].Q.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        }
+        
+        // Compressors Mapping
+        if(knobId === 'knob-sub-comp-thresh') subComp.threshold.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-sub-comp-ratio') subComp.ratio.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-sub-comp-gain') subCompMakeup.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+        
+        if(knobId === 'knob-mid-comp-thresh') midComp.threshold.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-mid-comp-ratio') midComp.ratio.setTargetAtTime(val, ctx.currentTime, T_CONST);
+        if(knobId === 'knob-mid-comp-gain') midCompMakeup.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+    }
+
+    function updateKnobVisual(knob, val) {
+        const min = parseFloat(knob.getAttribute('data-min')); const max = parseFloat(knob.getAttribute('data-max'));
+        const percentage = (val - min) / (max - min); const degrees = -135 + (percentage * 270);
+        knob.style.transform = `rotate(${degrees}deg)`;
+        
+        const id = knob.id.replace('knob-', ''); 
+        const inputEl = document.getElementById(`val-${id}`);
+        
+        let unit = (id.includes('freq') || id.includes('hpf') || id.includes('lpf')) ? 'Hz' : 
+                   (id.includes('ratio') ? ': 1' :
+                   (id.includes('q') ? '' : 'dB'));
+        
+        let displayVal = val;
+        if(unit === 'Hz' && val >= 1000) displayVal = (val/1000).toFixed(1) + 'k';
+        else if (unit === 'dB') displayVal = val > 0 ? '+'+val.toFixed(1) : val.toFixed(1);
+        else if (unit === ': 1' || unit === '') displayVal = val.toFixed(1);
+
+        if(inputEl) inputEl.value = unit ? `${displayVal} ${unit}` : displayVal;
+    }
+
+    function setKnobValue(id, val) {
+        let knob = document.getElementById(id); if(!knob) return;
+        knob.setAttribute('data-val', val); updateKnobVisual(knob, val); applyParamToAudio(id, val);
+    }
+
+    function parseInputValue(str) {
+        str = str.toLowerCase().replace(',', '.').replace(/hz|db|%|: 1/g, '').trim();
+        let multiplier = 1; if (str.includes('k')) { multiplier = 1000; str = str.replace('k', ''); }
+        let val = parseFloat(str) * multiplier; return isNaN(val) ? null : val;
+    }
+
+    function initKnobs() {
+        const knobs = document.querySelectorAll('.knob');
+        let activeKnob = null; let startY = 0; let startVal = 0;
+
+        function handleStart(e) { activeKnob = e.currentTarget; startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; startVal = parseFloat(activeKnob.getAttribute('data-val')); document.body.style.cursor = 'ns-resize'; }
+        function handleMove(e) {
+            if (!activeKnob) return; if (e.cancelable) e.preventDefault(); 
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const min = parseFloat(activeKnob.getAttribute('data-min')); const max = parseFloat(activeKnob.getAttribute('data-max'));
+            const step = parseFloat(activeKnob.getAttribute('data-step')); const isLog = activeKnob.getAttribute('data-log') === 'true';
+            const deltaY = startY - clientY; const sensitivity = isLog ? (max - min) / 100 : (max - min) / 150;
+            let newVal = startVal + (deltaY * sensitivity);
+            newVal = Math.max(min, Math.min(max, newVal)); newVal = Math.round(newVal / step) * step;
+            setKnobValue(activeKnob.id, newVal);
+        }
+        function handleEnd() { if (activeKnob) { activeKnob = null; document.body.style.cursor = 'default'; } }
+
+        knobs.forEach(knob => {
+            let initialVal = parseFloat(knob.getAttribute('data-val'));
+            updateKnobVisual(knob, initialVal); applyParamToAudio(knob.id, initialVal); 
+            knob.addEventListener('mousedown', handleStart); knob.addEventListener('touchstart', handleStart, { passive: false });
+        });
+
+        window.addEventListener('mousemove', handleMove, { passive: false }); window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('mouseup', handleEnd); window.addEventListener('touchend', handleEnd); window.addEventListener('touchcancel', handleEnd);
+
+        document.querySelectorAll('.knob-value').forEach(input => {
+            if(input.id.includes('master')) return;
+            input.addEventListener('change', function() {
+                let knobId = this.id.replace('val-', 'knob-'); let knob = document.getElementById(knobId); if (!knob) return;
+                let min = parseFloat(knob.getAttribute('data-min')); let max = parseFloat(knob.getAttribute('data-max')); let step = parseFloat(knob.getAttribute('data-step'));
+                let parsed = parseInputValue(this.value);
+                if (parsed !== null) { let newVal = Math.max(min, Math.min(max, parsed)); newVal = Math.round(newVal / step) * step; setKnobValue(knobId, newVal); } 
+                else { updateKnobVisual(knob, parseFloat(knob.getAttribute('data-val'))); }
+                this.blur();
+            });
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') this.blur(); });
+            input.addEventListener('click', function() { this.select(); });
+        });
+    }
+    initKnobs();
+
+    document.getElementById('flat-sub').addEventListener('click', () => { setKnobValue('knob-sub-eq-freq', 60); setKnobValue('knob-sub-eq-gain', 0); setKnobValue('knob-sub-eq-q', 1.0); });
+    
+    // Flat Mid EQ untuk semua 3 Band
+    document.getElementById('flat-mid').addEventListener('click', () => {
+        currentParams.midEQParams = [
+            { freq: 500, gain: 0, q: 1.0 },
+            { freq: 1500, gain: 0, q: 1.0 },
+            { freq: 5000, gain: 0, q: 1.0 }
+        ];
+        midEQ.forEach((eq, i) => {
+            eq.frequency.setTargetAtTime(currentParams.midEQParams[i].freq, ctx.currentTime, T_CONST);
+            eq.gain.setTargetAtTime(0, ctx.currentTime, T_CONST);
+            eq.Q.setTargetAtTime(1.0, ctx.currentTime, T_CONST);
+        });
+        switchMidEQ(currentParams.activeMidEQ);
+    });
+
+    // --- 4. GRAPHIC ANALYZER & VU METERS ---
+    const canvas = document.getElementById('analyzer'); const cctx = canvas.getContext('2d');
+    function resizeCanvas() { 
+        canvas.width = canvas.parentElement.clientWidth; 
+        canvas.height = canvas.parentElement.clientHeight || 250; 
+    }
+    window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+    const bufferLength = analyser.frequencyBinCount; const dataArray = new Uint8Array(bufferLength);
+    const timeDataL = new Float32Array(vuAnalyserL.frequencyBinCount); const timeDataR = new Float32Array(vuAnalyserR.frequencyBinCount);
+    const vuFillL = document.getElementById('vu-l'); const vuFillR = document.getElementById('vu-r');
+    let smoothVuL = 0; let smoothVuR = 0; const VU_FALLOFF = 0.85;
+
+    let smoothSubGR = 0; let smoothMidGR = 0; const GR_SMOOTHING = 0.15; 
+    const needleSubGR = document.getElementById('needle-sub-gr');
+    const needleMidGR = document.getElementById('needle-mid-gr');
+
+    function logPos(freq) { const minF = Math.log10(20); const maxF = Math.log10(20000); return (Math.log10(freq) - minF) * (canvas.width / (maxF - minF)); }
+
+    function drawGrid() {
+        cctx.strokeStyle = '#222'; cctx.lineWidth = 1; cctx.beginPath();
+        [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].forEach(f => {
+            const x = logPos(f); cctx.moveTo(x, 0); cctx.lineTo(x, canvas.height);
+            cctx.fillStyle = '#555'; cctx.font = '10px sans-serif';
+            let label = f >= 1000 ? (f/1000)+'k' : f; cctx.fillText(label, x + 5, canvas.height - 5);
+        });
+        [-48, -36, -24, -12, 0, 12].forEach(db => {
+            const y = canvas.height - ((db + 48) / 60) * canvas.height; cctx.moveTo(0, y); cctx.lineTo(canvas.width, y);
+            cctx.fillStyle = '#555'; cctx.fillText(db, 5, y - 5);
+        });
+        cctx.stroke();
+    }
+
+    function getFilterCurve(filters, isMuted) {
+        if(isMuted) return [];
+        const points = 180; const freqs = new Float32Array(points);
+        for(let i=0; i<points; i++) freqs[i] = Math.pow(10, Math.log10(20) + (i / points) * (Math.log10(20000) - Math.log10(20)));
+        let totalMag = new Float32Array(points); totalMag.fill(1.0);
+        filters.forEach(filter => {
+            let magResponse = new Float32Array(points); let phaseResponse = new Float32Array(points);
+            filter.getFrequencyResponse(freqs, magResponse, phaseResponse);
+            for(let i=0; i<points; i++) totalMag[i] *= magResponse[i];
+        });
+        let path = [];
+        for(let i=0; i<points; i++) {
+            let db = 20 * Math.log10(totalMag[i]); let y = canvas.height - ((db + 48) / 60) * canvas.height;
+            path.push({ x: logPos(freqs[i]), y: Math.max(0, Math.min(canvas.height, y)) });
+        }
+        return path;
+    }
+
+    function draw() {
+        requestAnimationFrame(draw);
+        cctx.fillStyle = '#0b0c10'; cctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+
+        analyser.getByteFrequencyData(dataArray);
+        cctx.beginPath(); cctx.moveTo(0, canvas.height);
+        const sampleRate = ctx.sampleRate || 44100;
+        for (let i = 0; i < bufferLength; i++) {
+            let freq = i * (sampleRate / 2) / bufferLength; if(freq < 20) continue; if(freq > 20000) break;
+            let x = logPos(freq); let y = canvas.height - (dataArray[i] / 255) * canvas.height * 0.8;
+            cctx.lineTo(x, y);
+        }
+        cctx.lineTo(canvas.width, canvas.height); cctx.fillStyle = 'rgba(25, 60, 110, 0.4)'; cctx.fill();
+        cctx.strokeStyle = 'rgba(50, 120, 200, 0.6)'; cctx.lineWidth = 1; cctx.stroke();
+
+        let subPath = getFilterCurve([...subHPF, ...subLPF, subEQ], currentParams.subIsMuted);
+        if (subPath.length > 0) { cctx.beginPath(); cctx.moveTo(subPath[0].x, subPath[0].y); subPath.forEach(pt => cctx.lineTo(pt.x, pt.y)); cctx.strokeStyle = 'rgba(100, 180, 255, 0.9)'; cctx.lineWidth = 2; cctx.stroke(); }
+        
+        // Kalkulasi Analyzer merespons seluruh 3 band Mid EQ
+        let midPath = getFilterCurve([...midHPF, ...midLPF, ...midEQ], currentParams.midIsMuted);
+        if (midPath.length > 0) { cctx.beginPath(); cctx.moveTo(midPath[0].x, midPath[0].y); midPath.forEach(pt => cctx.lineTo(pt.x, pt.y)); cctx.strokeStyle = 'rgba(255, 200, 50, 0.9)'; cctx.lineWidth = 2; cctx.stroke(); }
+
+        vuAnalyserL.getFloatTimeDomainData(timeDataL); vuAnalyserR.getFloatTimeDomainData(timeDataR);
+        let peakL = 0, peakR = 0;
+        for(let i=0; i<timeDataL.length; i++) { if(Math.abs(timeDataL[i]) > peakL) peakL = Math.abs(timeDataL[i]); if(Math.abs(timeDataR[i]) > peakR) peakR = Math.abs(timeDataR[i]); }
+        smoothVuL = Math.max(peakL, smoothVuL * VU_FALLOFF); smoothVuR = Math.max(peakR, smoothVuR * VU_FALLOFF);
+        vuFillL.style.height = (peakL <= 0.001 ? 0 : Math.max(0, Math.min(100, ((20 * Math.log10(smoothVuL) + 60) / 72) * 100))) + '%';
+        vuFillR.style.height = (peakR <= 0.001 ? 0 : Math.max(0, Math.min(100, ((20 * Math.log10(smoothVuR) + 60) / 72) * 100))) + '%';
+
+        // --- UPDATE VINTAGE COMPRESSOR METERS & LEDS ---
+        let targetSubGR = (typeof subComp.reduction === 'number') ? subComp.reduction : (subComp.reduction ? subComp.reduction.value : 0);
+        let targetMidGR = (typeof midComp.reduction === 'number') ? midComp.reduction : (midComp.reduction ? midComp.reduction.value : 0);
+        if (currentParams.subCompBypassed) targetSubGR = 0; if (currentParams.midCompBypassed) targetMidGR = 0;
+
+        smoothSubGR = smoothSubGR * (1 - GR_SMOOTHING) + targetSubGR * GR_SMOOTHING;
+        smoothMidGR = smoothMidGR * (1 - GR_SMOOTHING) + targetMidGR * GR_SMOOTHING;
+
+        needleSubGR.style.transform = `rotate(${45 + (Math.max(-20, smoothSubGR) / 20) * 90}deg)`;
+        needleMidGR.style.transform = `rotate(${45 + (Math.max(-20, smoothMidGR) / 20) * 90}deg)`;
+
+        if(smoothSubGR < -0.1 && !currentParams.subCompBypassed) {
+            document.getElementById('led-sub-above').classList.add('active'); document.getElementById('led-sub-below').classList.remove('active');
+        } else {
+            document.getElementById('led-sub-above').classList.remove('active'); document.getElementById('led-sub-below').classList.add('active');
+        }
+
+        if(smoothMidGR < -0.1 && !currentParams.midCompBypassed) {
+            document.getElementById('led-mid-above').classList.add('active'); document.getElementById('led-mid-below').classList.remove('active');
+        } else {
+            document.getElementById('led-mid-above').classList.remove('active'); document.getElementById('led-mid-below').classList.add('active');
+        }
+    }
+    draw();
+</script>
+</body>
+</html>
