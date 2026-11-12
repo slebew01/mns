@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Follow tiktok MNSProject Soundminiproject - Advanced Video DSP</title>
+    <title>@aggrp_ - Advanced Media DSP</title>
     <style>
         :root {
             --bg-dark: #121317;
@@ -19,13 +19,13 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
-        body { background-color: var(--bg-dark); color: var(--text-main); padding: 20px; overscroll-behavior-y: contain; }
+        body { background-color: var(--bg-dark); color: var(--text-main); padding: 14px; overscroll-behavior-y: contain; }
 
         .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
 
         /* HEADER */
         .header { text-align: center; padding: 15px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; }
-        .header h1 { color: var(--accent-blue); font-size: 2rem; letter-spacing: 2px; text-transform: uppercase; }
+        .header h1 { color: var(--accent-blue); font-size: 2rem; letter-spacing: 2px; text-transform: none; }
         .header p { color: var(--text-muted); font-size: 0.9rem; letter-spacing: 1px; }
 
         /* MEDIA SECTION */
@@ -55,7 +55,7 @@
         
         /* DSP PANELS */
         .dsp-panels { display: flex; gap: 15px; flex-wrap: wrap; align-items: stretch; }
-        .dsp-module { flex: 1; min-width: 340px; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; }
+        .dsp-module { flex: 1; min-width: min(340px, 100%); background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; }
         
         .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
         .module-title { font-size: 1rem; color: var(--accent-yellow); text-transform: uppercase; font-weight: bold; }
@@ -77,12 +77,12 @@
         .mute-btn.active { background: var(--accent-red); color: #111; box-shadow: 0 0 8px rgba(243, 139, 168, 0.5); }
 
         .knob-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; flex-grow: 1; }
-        .knob-container { display: flex; flex-direction: column; align-items: center; width: 75px; position: relative; }
+        .knob-container { display: flex; flex-direction: column; align-items: center; width: 92px; position: relative; }
         .knob-label { font-size: 0.7rem; color: var(--text-muted); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; text-align: center; height: 16px; }
         
         /* KNOBS */
         .knob {
-            width: 50px; height: 50px; border-radius: 50%;
+            width: 72px; height: 72px; border-radius: 50%;
             background: var(--knob-bg);
             border: 2px solid #111;
             box-shadow: 0 5px 10px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.4);
@@ -90,15 +90,15 @@
             transform: rotate(-135deg); touch-action: none; 
         }
         .knob-pointer {
-            position: absolute; width: 4px; height: 16px; background: #111;
-            top: 2px; left: 50%; transform: translateX(-50%); border-radius: 2px;
+            position: absolute; width: 6px; height: 24px; background: #111;
+            top: 3px; left: 50%; transform: translateX(-50%); border-radius: 2px;
             box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);
         }
         
         /* EDITABLE KNOB/FADER VALUE */
         .knob-value { 
-            font-family: monospace; font-size: 0.85rem; color: var(--text-main); 
-            margin-top: 10px; background: #111; padding: 4px 6px; 
+            font-family: monospace; font-size: 0.95rem; color: var(--text-main); 
+            margin-top: 10px; background: #111; padding: 7px 6px; 
             border-radius: 4px; border: 1px solid #222; width: 100%; 
             text-align: center; cursor: text; outline: none; user-select: auto; -webkit-user-select: auto;
         }
@@ -111,7 +111,7 @@
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
             align-items: center; flex-wrap: wrap; justify-content: center;
         }
-        .comp-knobs { display: flex; gap: 10px; flex: 1; min-width: 200px; justify-content: space-around; }
+        .comp-knobs { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 200px; justify-content: space-around; }
         
         .led-container { position: absolute; top: -18px; display: flex; gap: 8px; justify-content: center; width: 100%; }
         .led-wrapper { display: flex; flex-direction: column; align-items: center; gap: 3px; }
@@ -153,14 +153,130 @@
             background: linear-gradient(to top, var(--accent-green) 0%, var(--accent-green) 60%, var(--accent-yellow) 60%, var(--accent-yellow) 85%, var(--accent-red) 85%, var(--accent-red) 100%);
             transition: height 0.05s linear;
         }
+        /* PRESET + SYSTEM MODE */
+        .preset-bar, .sys-bar, .master-bar { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; }
+        .bar-title { font-size: 0.75rem; color: var(--accent-yellow); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; }
+        .preset-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .preset-btn { flex: 1 1 28%; min-width: 92px; padding: 13px 8px; font-size: 0.78rem; }
+        .preset-btn.active { background: var(--accent-blue); color: #11111b; }
+        .preset-desc { margin-top: 10px; font-size: 0.82rem; color: var(--text-muted); min-height: 1.3em; line-height: 1.4; }
+        .sys-bar { display: flex; flex-direction: column; gap: 10px; }
+        .sys-btn { padding: 15px; font-size: 0.95rem; letter-spacing: 1px; }
+        .sys-btn.on { background: var(--accent-green); color: #111; box-shadow: 0 0 10px rgba(166, 227, 161, 0.45); }
+        .sys-btn:disabled { opacity: 0.6; }
+        .sys-status { font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; word-break: break-word; }
+        .sys-status.err { color: var(--accent-red); }
+
+        .master-bar .knob-row { gap: 12px; justify-content: space-around; }
+        .master-note { margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+        .up-row { display: flex; gap: 8px; margin-top: 12px; }
+        .up-row input { flex: 1; min-width: 0; background: #11111b; border: 1px solid #444; color: var(--text-main); border-radius: 4px; padding: 11px 10px; font-size: 0.9rem; }
+        .up-row .btn { padding: 11px 16px; }
+        .up-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .up-item { display: flex; flex: 1 1 40%; min-width: 130px; }
+        .up-item .up-btn { flex: 1; min-width: 0; border-radius: 4px 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .up-item .up-del { width: 42px; padding: 0; border-radius: 0 4px 4px 0; color: var(--accent-red); font-size: 1.1rem; }
+        .geq { display: flex; justify-content: space-between; gap: 2px; margin: 8px 0; }
+        .geq-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; gap: 6px; }
+        .geq-col input[type=range] { writing-mode: vertical-lr; direction: rtl; height: 170px; width: 30px; margin: 0; accent-color: var(--accent-blue); }
+        .geq-val { font-size: 0.62rem; color: var(--accent-yellow); font-family: monospace; min-height: 1em; }
+        .geq-f { font-size: 0.62rem; color: var(--text-muted); }
+
+        @media (max-width: 400px) {
+            .knob-container { width: 84px; }
+            .knob { width: 66px; height: 66px; }
+            .knob-pointer { height: 22px; }
+            .comp-layout { padding: 10px; gap: 8px; }
+            .header h1 { font-size: 1.7rem; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Follow tiktok MNSProject</h1>
-        <p>Soundminiproject • Advanced Media DSP</p>
+        <h1>@aggrp_</h1>
+        <p>Advanced Media DSP</p>
+    </div>
+
+    <div class="preset-bar">
+        <div class="bar-title">Preset</div>
+        <div class="preset-row" id="preset-row">
+            <button class="btn preset-btn active" data-preset="flat">Flat</button>
+            <button class="btn preset-btn" data-preset="pop">Pop</button>
+            <button class="btn preset-btn" data-preset="dj">DJ / EDM</button>
+            <button class="btn preset-btn" data-preset="bass">Bass Boost</button>
+            <button class="btn preset-btn" data-preset="koplo">Dangdut / Koplo</button>
+            <button class="btn preset-btn" data-preset="vokal">Vokal / Podcast</button>
+        </div>
+        <div class="preset-desc" id="preset-desc"></div>
+        <div class="up-row">
+            <input type="text" id="up-name" maxlength="20" placeholder="Nama preset buatanmu">
+            <button class="btn" id="up-save">Simpan</button>
+        </div>
+        <div class="up-list" id="user-presets"></div>
+    </div>
+
+    <div class="sys-bar">
+        <div class="bar-title">Mode System (YouTube dan semua aplikasi)</div>
+        <button class="btn sys-btn" id="btn-system">System Mode: OFF</button>
+        <div class="sys-status" id="sys-status"></div>
+    </div>
+
+    <div class="master-bar">
+        <div class="bar-title">Quick Tune (bass, treble, volume)</div>
+        <div class="knob-row">
+            <div class="knob-container">
+                <div class="knob-label">Bass Boost</div>
+                <div class="knob" id="knob-m-bass" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-bass" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Sub Bass</div>
+                <div class="knob" id="knob-m-sub" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-sub" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Punch</div>
+                <div class="knob" id="knob-m-punch" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-punch" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Warmth</div>
+                <div class="knob" id="knob-m-warm" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-warm" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Treble</div>
+                <div class="knob" id="knob-m-treble" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-treble" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Loudness</div>
+                <div class="knob" id="knob-m-loud" data-min="0" data-max="10" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-loud" value="0.0 dB">
+            </div>
+            <div class="knob-container">
+                <div class="knob-label">Volume</div>
+                <div class="knob" id="knob-m-vol" data-min="-12" data-max="12" data-val="0" data-step="0.5">
+                    <div class="knob-pointer"></div>
+                </div>
+                <input type="text" class="knob-value" id="val-m-vol" value="0.0 dB">
+            </div>
+        </div>
+        <div class="master-note">Sub Bass = dentuman paling dalam (45 Hz). Punch = tendangan kick (85 Hz). Warmth = bass tebal dan hangat (200 Hz). Loudness = bass dan treble naik sekaligus, enak buat volume kecil. Volume = naik atau turunin suara akhir. Naikin pelan-pelan, kalau suara pecah turunin Volume.</div>
     </div>
 
     <div class="media-section">
@@ -454,6 +570,15 @@
                 </div>
             </div>
         </div>
+
+        <div class="dsp-module geq-module">
+            <div class="module-header">
+                <div class="module-title">Equalizer 10 Band</div>
+                <button class="btn flat-btn" id="geq-reset">RESET</button>
+            </div>
+            <div class="geq" id="geq"></div>
+            <div class="master-note">Geser naik buat nambah, turun buat ngurangin (maksimal 12 dB). Ikut jalan di System Mode.</div>
+        </div>
     </div>
 </div>
 
@@ -463,6 +588,26 @@
     const ctx = new AudioContext();
     const mediaEl = document.getElementById('media-element');
     let sourceNode;
+    let systemOn = false;
+    let applyingConfig = false;
+    let activePreset = 'flat';
+
+    // Web Audio: Q untuk lowpass/highpass dihitung dalam dB. -3.0103 dB = Q 0.7071 (Butterworth).
+    // (Nilai asli 0.707 dB bikin filter resonan, crossover nonjol sekitar +7 dB.)
+    const BUTTER_Q_DB = -3.0103;
+    const BUTTER_Q = 1 / Math.SQRT2;
+    // Waktu kompresor (ms). Dipakai sama persis di Web Audio dan di efek system.
+    const COMP_TIMING = { sub: { atk: 12, rel: 200 }, mid: { atk: 6, rel: 150 } };
+
+    // Jalur khusus: kalau System Mode nyala, file yang diputar di app ini
+    // lewat jalur langsung (efek dikerjain system), biar nggak diproses dua kali.
+    const dspIn = ctx.createGain();
+    const directOut = ctx.createGain(); directOut.gain.value = 0;
+    function applyEngineRouting() {
+        const t = ctx.currentTime;
+        dspIn.gain.setTargetAtTime(systemOn ? 0 : 1, t, 0.02);
+        directOut.gain.setTargetAtTime(systemOn ? 1 : 0, t, 0.02);
+    }
 
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 4096;
@@ -486,23 +631,23 @@
     const vuAnalyserR = ctx.createAnalyser(); vuAnalyserR.fftSize = 512;
 
     // Sub Nodes
-    const subHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = 0.707; return f; });
-    const subLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.707; return f; });
+    const subHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = BUTTER_Q_DB; return f; });
+    const subLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = BUTTER_Q_DB; return f; });
     const subEQ = ctx.createBiquadFilter(); subEQ.type = 'peaking'; subEQ.frequency.value = 60; subEQ.gain.value = 0; subEQ.Q.value = 1.0;
     const subSplit = ctx.createChannelSplitter(2); const subMerge = ctx.createChannelMerger(2);
     const subGainL = ctx.createGain(); const subGainR = ctx.createGain();
     const subGain = ctx.createGain(); const subMute = ctx.createGain();
 
     // Sub Compressor Nodes
-    const subComp = ctx.createDynamicsCompressor(); subComp.threshold.value = 0; subComp.ratio.value = 1; subComp.knee.value = 10;
+    const subComp = ctx.createDynamicsCompressor(); subComp.threshold.value = 0; subComp.ratio.value = 1; subComp.knee.value = 10; subComp.attack.value = COMP_TIMING.sub.atk / 1000; subComp.release.value = COMP_TIMING.sub.rel / 1000;
     const subCompMakeup = ctx.createGain();
     const subCompDry = ctx.createGain(); subCompDry.gain.value = 0; 
     const subCompWet = ctx.createGain(); subCompWet.gain.value = 1;
     const subCompOut = ctx.createGain();
 
     // Mid Nodes (Diupgrade menjadi 3-Band EQ dalam susunan serial)
-    const midHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = 0.707; return f; });
-    const midLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.707; return f; });
+    const midHPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'highpass'; f.Q.value = BUTTER_Q_DB; return f; });
+    const midLPF = Array.from({length: 4}, () => { let f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = BUTTER_Q_DB; return f; });
     const midEQ = Array.from({length: 3}, (_, i) => {
         let f = ctx.createBiquadFilter(); f.type = 'peaking';
         f.frequency.value = i === 0 ? 500 : (i === 1 ? 1500 : 5000);
@@ -513,11 +658,44 @@
     const midGain = ctx.createGain(); const midMute = ctx.createGain();
 
     // Mid Compressor Nodes
-    const midComp = ctx.createDynamicsCompressor(); midComp.threshold.value = 0; midComp.ratio.value = 1; midComp.knee.value = 10;
+    const midComp = ctx.createDynamicsCompressor(); midComp.threshold.value = 0; midComp.ratio.value = 1; midComp.knee.value = 10; midComp.attack.value = COMP_TIMING.mid.atk / 1000; midComp.release.value = COMP_TIMING.mid.rel / 1000;
     const midCompMakeup = ctx.createGain();
     const midCompDry = ctx.createGain(); midCompDry.gain.value = 0; 
     const midCompWet = ctx.createGain(); midCompWet.gain.value = 1;
     const midCompOut = ctx.createGain();
+
+    // ---- Master tone stage: Bass/Treble/Loudness/Quick-tune + EQ 10 band (serial), lalu Volume
+    const MST_BANDS = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    const mstBandVals = MST_BANDS.map(() => 0);
+    function mstList(m) {
+        return [
+            { type: 'lowshelf', f: 100, q: 1, g: m.bass },
+            { type: 'highshelf', f: 8000, q: 1, g: m.treble },
+            { type: 'lowshelf', f: 80, q: 1, g: m.loud * 0.9 },
+            { type: 'highshelf', f: 9000, q: 1, g: m.loud * 0.5 },
+            { type: 'peaking', f: 45, q: 1.0, g: m.sub },
+            { type: 'peaking', f: 85, q: 1.1, g: m.punch },
+            { type: 'peaking', f: 200, q: 0.8, g: m.warm }
+        ].concat(MST_BANDS.map((f, i) => ({ type: 'peaking', f: f, q: 1.41, g: m.bands[i] })));
+    }
+    const mstIn = ctx.createGain();
+    const mstVol = ctx.createGain();
+    const mstNodes = mstList({ bass: 0, treble: 0, loud: 0, sub: 0, punch: 0, warm: 0, bands: mstBandVals }).map(sp => {
+        const n = ctx.createBiquadFilter(); n.type = sp.type; n.frequency.value = sp.f; n.Q.value = sp.q; n.gain.value = 0; return n;
+    });
+    mstIn.connect(mstNodes[0]);
+    for (let i = 0; i < mstNodes.length - 1; i++) mstNodes[i].connect(mstNodes[i + 1]);
+    mstNodes[mstNodes.length - 1].connect(mstVol);
+    function readMaster() {
+        const k = id => { const e = document.getElementById(id); const v = e ? parseFloat(e.getAttribute('data-val')) : 0; return isFinite(v) ? v : 0; };
+        return { bass: k('knob-m-bass'), treble: k('knob-m-treble'), loud: k('knob-m-loud'), sub: k('knob-m-sub'),
+                 punch: k('knob-m-punch'), warm: k('knob-m-warm'), vol: k('knob-m-vol'), bands: mstBandVals.slice() };
+    }
+    function refreshMaster() {
+        const m = readMaster(), t = ctx.currentTime;
+        mstList(m).forEach((sp, i) => { mstNodes[i].frequency.setTargetAtTime(sp.f, t, 0.05); mstNodes[i].gain.setTargetAtTime(sp.g, t, 0.05); });
+        mstVol.gain.setTargetAtTime(Math.pow(10, m.vol / 20), t, 0.05);
+    }
 
     // Routing
     for(let i=0; i<3; i++) {
@@ -587,11 +765,16 @@
     function setupAudioRouting() {
         if(!sourceNode) {
             sourceNode = ctx.createMediaElementSource(mediaEl);
-            sourceNode.connect(subHPF[0]);
-            sourceNode.connect(midHPF[0]);
+            sourceNode.connect(dspIn);
+            dspIn.connect(subHPF[0]);
+            dspIn.connect(midHPF[0]);
+            sourceNode.connect(directOut);
+            directOut.connect(ctx.destination);
+            applyEngineRouting();
 
-            subMute.connect(masterLimiter);
-            midMute.connect(masterLimiter);
+            subMute.connect(mstIn);
+            midMute.connect(mstIn);
+            mstVol.connect(masterLimiter);
             
             masterLimiter.connect(masterSplitter);
             analyser.connect(ctx.destination);
@@ -683,6 +866,7 @@
 
     // --- CUSTOM KNOBS & AUDIO MAPPING ---
     function applyParamToAudio(knobId, val) {
+        if (knobId.indexOf('knob-m-') === 0) refreshMaster();
         if(knobId === 'knob-sub-hpf') { currentParams.subHPF = val; updateSubHPF(); }
         if(knobId === 'knob-sub-lpf') { currentParams.subLPF = val; updateSubLPF(); }
         if(knobId === 'knob-sub-gain') subGain.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
@@ -711,11 +895,11 @@
         // Compressors Mapping
         if(knobId === 'knob-sub-comp-thresh') subComp.threshold.setTargetAtTime(val, ctx.currentTime, T_CONST);
         if(knobId === 'knob-sub-comp-ratio') subComp.ratio.setTargetAtTime(val, ctx.currentTime, T_CONST);
-        if(knobId === 'knob-sub-comp-gain') subCompMakeup.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+        if(knobId.startsWith('knob-sub-comp-')) refreshCompMakeup('sub');
         
         if(knobId === 'knob-mid-comp-thresh') midComp.threshold.setTargetAtTime(val, ctx.currentTime, T_CONST);
         if(knobId === 'knob-mid-comp-ratio') midComp.ratio.setTargetAtTime(val, ctx.currentTime, T_CONST);
-        if(knobId === 'knob-mid-comp-gain') midCompMakeup.gain.setTargetAtTime(dbToGain(val), ctx.currentTime, T_CONST);
+        if(knobId.startsWith('knob-mid-comp-')) refreshCompMakeup('mid');
     }
 
     function updateKnobVisual(knob, val) {
@@ -728,7 +912,7 @@
         
         let unit = (id.includes('freq') || id.includes('hpf') || id.includes('lpf')) ? 'Hz' : 
                    (id.includes('ratio') ? ': 1' :
-                   (id.includes('q') ? '' : 'dB'));
+                   ((id.includes('q') || id === 'm-loud') ? '' : 'dB'));
         
         let displayVal = val;
         if(unit === 'Hz' && val >= 1000) displayVal = (val/1000).toFixed(1) + 'k';
@@ -740,6 +924,7 @@
 
     function setKnobValue(id, val) {
         let knob = document.getElementById(id); if(!knob) return;
+        markCustom();
         knob.setAttribute('data-val', val); updateKnobVisual(knob, val); applyParamToAudio(id, val);
     }
 
@@ -753,16 +938,29 @@
         const knobs = document.querySelectorAll('.knob');
         let activeKnob = null; let startY = 0; let startVal = 0;
 
-        function handleStart(e) { activeKnob = e.currentTarget; startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY; startVal = parseFloat(activeKnob.getAttribute('data-val')); document.body.style.cursor = 'ns-resize'; }
+        let lastAng = 0, rawVal = 0;
+        const pt = e => e.type.indexOf('touch') === 0 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
+        function knobCenter(k) { const r = k.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+        function handleStart(e) {
+            activeKnob = e.currentTarget;
+            const c = knobCenter(activeKnob), p = pt(e);
+            lastAng = Math.atan2(p.y - c.y, p.x - c.x) * 180 / Math.PI;
+            rawVal = parseFloat(activeKnob.getAttribute('data-val'));
+            document.body.style.cursor = 'grabbing';
+            if (e.cancelable) e.preventDefault();
+        }
         function handleMove(e) {
-            if (!activeKnob) return; if (e.cancelable) e.preventDefault(); 
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            if (!activeKnob) return; if (e.cancelable) e.preventDefault();
+            const c = knobCenter(activeKnob), p = pt(e);
+            if (Math.hypot(p.x - c.x, p.y - c.y) < 10) return; // terlalu dekat pusat, sudut nggak stabil
+            const a = Math.atan2(p.y - c.y, p.x - c.x) * 180 / Math.PI;
+            let d = a - lastAng; if (d > 180) d -= 360; if (d < -180) d += 360;
+            lastAng = a;
             const min = parseFloat(activeKnob.getAttribute('data-min')); const max = parseFloat(activeKnob.getAttribute('data-max'));
-            const step = parseFloat(activeKnob.getAttribute('data-step')); const isLog = activeKnob.getAttribute('data-log') === 'true';
-            const deltaY = startY - clientY; const sensitivity = isLog ? (max - min) / 100 : (max - min) / 150;
-            let newVal = startVal + (deltaY * sensitivity);
-            newVal = Math.max(min, Math.min(max, newVal)); newVal = Math.round(newVal / step) * step;
-            setKnobValue(activeKnob.id, newVal);
+            const step = parseFloat(activeKnob.getAttribute('data-step'));
+            rawVal = Math.max(min, Math.min(max, rawVal + d * (max - min) / 270)); // 270 derajat = seluruh rentang, searah jarum jam = naik
+            const newVal = Math.max(min, Math.min(max, Math.round(rawVal / step) * step));
+            if (newVal !== parseFloat(activeKnob.getAttribute('data-val'))) setKnobValue(activeKnob.id, newVal);
         }
         function handleEnd() { if (activeKnob) { activeKnob = null; document.body.style.cursor = 'default'; } }
 
@@ -808,6 +1006,447 @@
         switchMidEQ(currentParams.activeMidEQ);
     });
 
+    // =====================================================================
+    //  MAKEUP KOMPRESOR, MODEL KURVA, PRESET, SYSTEM MODE, SIMPAN PENGATURAN
+    // =====================================================================
+
+    // Rumus makeup otomatis DynamicsCompressorNode (sudah dicocokkan dengan hasil ukur Chromium).
+    function autoMakeupDb(T, R, knee) {
+        if (R <= 1.0001) return 0;
+        const d2l = d => Math.pow(10, d / 20), l2d = x => 20 * Math.log10(x);
+        const lt = d2l(T), slope = 1 / R;
+        const kneeCurve = (x, k) => x < lt ? x : lt + (1 - Math.exp(-k * (x - lt))) / k;
+        const slopeAt = (x, k) => {
+            if (x < lt) return 1;
+            const x2 = x * 1.001;
+            return (l2d(kneeCurve(x2, k)) - l2d(kneeCurve(x, k))) / (l2d(x2) - l2d(x));
+        };
+        const kneeDb = T + knee, kneeLin = d2l(kneeDb);
+        let minK = 0.1, maxK = 10000, k = 5;
+        for (let i = 0; i < 15; i++) {
+            if (slopeAt(kneeLin, k) < slope) maxK = k; else minK = k;
+            k = Math.sqrt(minK * maxK);
+        }
+        const yKneeDb = l2d(kneeCurve(kneeLin, k));
+        const full = 1 < kneeLin ? kneeCurve(1, k) : d2l(yKneeDb + slope * (l2d(1) - kneeDb));
+        return l2d(Math.pow(1 / full, 0.6));
+    }
+    function refreshCompMakeup(which) {
+        const k = id => parseFloat(document.getElementById(id).getAttribute('data-val'));
+        const T = k('knob-' + which + '-comp-thresh'), R = k('knob-' + which + '-comp-ratio'), M = k('knob-' + which + '-comp-gain');
+        const node = which === 'sub' ? subCompMakeup : midCompMakeup;
+        node.gain.setTargetAtTime(dbToGain(M - autoMakeupDb(T, R, 10)), ctx.currentTime, T_CONST);
+    }
+
+    // ---- model respons filter (hitung sendiri, nggak tergantung AudioContext lagi jalan atau nggak)
+    const SYS_FS = 48000;
+    function biquadResp(type, f0, Q, gainDb, f) {
+        const w0 = 2 * Math.PI * Math.min(f0, SYS_FS * 0.499) / SYS_FS, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * Q);
+        let b0, b1, b2, a0, a1, a2;
+        if (type === 'highpass') { b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = (1 + cw) / 2; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; }
+        else if (type === 'lowpass') { b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = (1 - cw) / 2; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; }
+        else if (type === 'lowshelf' || type === 'highshelf') {
+            const A = Math.pow(10, gainDb / 40), sA = 2 * Math.sqrt(A) * (sw / 2) * Math.SQRT2;
+            if (type === 'lowshelf') {
+                b0 = A * ((A + 1) - (A - 1) * cw + sA); b1 = 2 * A * ((A - 1) - (A + 1) * cw); b2 = A * ((A + 1) - (A - 1) * cw - sA);
+                a0 = (A + 1) + (A - 1) * cw + sA; a1 = -2 * ((A - 1) + (A + 1) * cw); a2 = (A + 1) + (A - 1) * cw - sA;
+            } else {
+                b0 = A * ((A + 1) + (A - 1) * cw + sA); b1 = -2 * A * ((A - 1) + (A + 1) * cw); b2 = A * ((A + 1) + (A - 1) * cw - sA);
+                a0 = (A + 1) - (A - 1) * cw + sA; a1 = 2 * ((A - 1) - (A + 1) * cw); a2 = (A + 1) - (A - 1) * cw - sA;
+            }
+        }
+        else { const A = Math.pow(10, gainDb / 40); b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A; }
+        const w = 2 * Math.PI * f / SYS_FS, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+        const nr = b0 + b1 * c1 + b2 * c2, ni = -(b1 * s1 + b2 * s2);
+        const dr = a0 + a1 * c1 + a2 * c2, di = -(a1 * s1 + a2 * s2);
+        const den = dr * dr + di * di;
+        return [(nr * dr + ni * di) / den, (ni * dr - nr * di) / den];
+    }
+    function pathResp(st, which, f) {
+        const p = st[which];
+        let re = 1, im = 0;
+        const mul = r => { const a = re, b = im; re = a * r[0] - b * r[1]; im = a * r[1] + b * r[0]; };
+        const hc = p.slopeH / 12, lc = p.slopeL / 12;
+        for (let i = 0; i < 4; i++) mul(biquadResp('highpass', i < hc ? p.hpf : 10, BUTTER_Q, 0, f));
+        for (let i = 0; i < 4; i++) mul(biquadResp('lowpass', i < lc ? p.lpf : 22000, BUTTER_Q, 0, f));
+        if (which === 'sub') mul(biquadResp('peaking', p.eqF, p.eqQ, p.eqG, f));
+        else st.midEQ.forEach(e => mul(biquadResp('peaking', e.f, e.q, e.g, f)));
+        return [re, im];
+    }
+    function readState() {
+        const k = id => parseFloat(document.getElementById(id).getAttribute('data-val'));
+        const cp = currentParams;
+        return {
+            sub: { hpf: cp.subHPF, lpf: cp.subLPF, slopeH: cp.subSlopeHPF, slopeL: cp.subSlopeLPF, mute: cp.subIsMuted, byp: cp.subCompBypassed,
+                   gain: k('knob-sub-gain'), eqF: k('knob-sub-eq-freq'), eqG: k('knob-sub-eq-gain'), eqQ: k('knob-sub-eq-q'),
+                   cT: k('knob-sub-comp-thresh'), cR: k('knob-sub-comp-ratio'), cM: k('knob-sub-comp-gain') },
+            mid: { hpf: cp.midHPF, lpf: cp.midLPF, slopeH: cp.midSlopeHPF, slopeL: cp.midSlopeLPF, mute: cp.midIsMuted, byp: cp.midCompBypassed,
+                   gain: k('knob-mid-gain'),
+                   cT: k('knob-mid-comp-thresh'), cR: k('knob-mid-comp-ratio'), cM: k('knob-mid-comp-gain') },
+            midEQ: cp.midEQParams.map(e => ({ f: e.freq, g: e.gain, q: e.q })),
+            mst: readMaster()
+        };
+    }
+
+    const MODEL_FREQS = Array.from({ length: 180 }, (_, i) => Math.pow(10, Math.log10(20) + (i / 180) * (Math.log10(20000) - Math.log10(20))));
+    let modelCache = { sig: '', sub: null, mid: null, sum: null };
+    const toDb = mag => 20 * Math.log10(Math.max(mag, 1e-6));
+    function getModel() {
+        const st = readState();
+        const sig = JSON.stringify(st);
+        if (sig === modelCache.sig) return modelCache;
+        const gs = st.sub.mute ? 0 : dbToGain(st.sub.gain + (st.sub.byp ? 0 : st.sub.cM));
+        const gm = st.mid.mute ? 0 : dbToGain(st.mid.gain + (st.mid.byp ? 0 : st.mid.cM));
+        const sub = [], mid = [], sum = [];
+        MODEL_FREQS.forEach(f => {
+            const s = pathResp(st, 'sub', f), m = pathResp(st, 'mid', f);
+            sub.push(toDb(Math.hypot(s[0], s[1])));
+            mid.push(toDb(Math.hypot(m[0], m[1])));
+            sum.push(toDb(Math.hypot(s[0] * gs + m[0] * gm, s[1] * gs + m[1] * gm)) + masterDb(st.mst, f));
+        });
+        modelCache = { sig, sub: st.sub.mute ? null : sub, mid: st.mid.mute ? null : mid, sum };
+        return modelCache;
+    }
+
+    // ---- band Pre-EQ untuk System Mode: 1/6 oktaf di bawah 250 Hz (bass lebih halus), 1/3 oktaf di atasnya
+    const SYS_CUTOFFS = (() => {
+        const out = []; let f = 22.4;
+        while (f < 250) { out.push(f); f *= Math.pow(2, 1 / 6); }
+        while (f < 17000) { out.push(f); f *= Math.pow(2, 1 / 3); }
+        out.push(20000);
+        return out.map(x => Math.round(x * 10) / 10);
+    })();
+    const SYS_CENTERS = SYS_CUTOFFS.map((c, i) => Math.sqrt((i === 0 ? c / Math.pow(2, 1 / 6) : SYS_CUTOFFS[i - 1]) * c));
+
+    function masterDb(m, f) {
+        let db = 0;
+        mstList(m).forEach(sp => {
+            if (Math.abs(sp.g) > 0.001) { const r = biquadResp(sp.type, sp.f, sp.q, sp.g, f); db += toDb(Math.hypot(r[0], r[1])); }
+        });
+        return db;
+    }
+    function sysPost(p, vol) { return p.mute ? -80 : p.gain + (p.byp ? 0 : p.cM) + (vol || 0); }
+    function buildSystemParams(st) {
+        // Kurva Pre-EQ = jumlah jalur Sub + Mid dengan gain 1 (gain tiap band diurus kompresor 2-band di native)
+        const gains = SYS_CENTERS.map(f => {
+            const s = st.sub.mute ? [0, 0] : pathResp(st, 'sub', f);
+            const m = st.mid.mute ? [0, 0] : pathResp(st, 'mid', f);
+            const db = toDb(Math.hypot(s[0] + m[0], s[1] + m[1])) + masterDb(st.mst, f);
+            return Math.round(Math.max(-60, Math.min(24, db)) * 100) / 100;
+        });
+        return {
+            gains,
+            xover: st.sub.lpf,
+            subT: st.sub.byp ? 0 : st.sub.cT, subR: st.sub.byp ? 1 : st.sub.cR,
+            subAtk: COMP_TIMING.sub.atk, subRel: COMP_TIMING.sub.rel, subPost: sysPost(st.sub, st.mst.vol),
+            midT: st.mid.byp ? 0 : st.mid.cT, midR: st.mid.byp ? 1 : st.mid.cR,
+            midAtk: COMP_TIMING.mid.atk, midRel: COMP_TIMING.mid.rel, midPost: sysPost(st.mid, st.mst.vol)
+        };
+    }
+
+    // ---- preset
+    const PRESETS = {
+        flat: { desc: 'Semua netral. Titik awal buat ngatur sendiri.',
+            sub: { hpf: 30, lpf: 100, gain: 0, eqF: 60, eqG: 0, eqQ: 1, cT: 0, cR: 1, cM: 0 },
+            mid: { hpf: 100, lpf: 20000, gain: 0, cT: 0, cR: 1, cM: 0 },
+            eq: [{ f: 500, g: 0, q: 1 }, { f: 1500, g: 0, q: 1 }, { f: 5000, g: 0, q: 1 }] },
+        pop: { desc: 'Seimbang: bass hangat, vokal jelas, treble halus.',
+            sub: { hpf: 35, lpf: 100, gain: 0, eqF: 60, eqG: 3, eqQ: 1, cT: -18, cR: 2.5, cM: 1.5 },
+            mid: { hpf: 100, lpf: 20000, gain: 0, cT: -14, cR: 2, cM: 1 },
+            eq: [{ f: 250, g: -2, q: 1 }, { f: 3000, g: 2, q: 1 }, { f: 10000, g: 1.5, q: 0.7 }] },
+        dj: { desc: 'Kick nendang dan rapat, bass ketat, hi-hat tajam.',
+            sub: { hpf: 30, lpf: 110, gain: 1.5, eqF: 55, eqG: 5, eqQ: 1.2, cT: -14, cR: 4, cM: 3 },
+            mid: { hpf: 110, lpf: 20000, gain: 0, cT: -12, cR: 3, cM: 2 },
+            eq: [{ f: 220, g: -3, q: 1.4 }, { f: 2500, g: 1.5, q: 1 }, { f: 9000, g: 2.5, q: 0.8 }] },
+        bass: { desc: 'Bass tebal dan dalam. Volume jangan maksimal, bisa pecah.',
+            sub: { hpf: 28, lpf: 120, gain: 2, eqF: 50, eqG: 6, eqQ: 0.9, cT: -12, cR: 5, cM: 3 },
+            mid: { hpf: 120, lpf: 20000, gain: 0, cT: -12, cR: 3, cM: 1 },
+            eq: [{ f: 200, g: 2, q: 0.8 }, { f: 3000, g: 1, q: 1 }, { f: 8000, g: 1, q: 0.8 }] },
+        koplo: { desc: 'Kendang dan vokal maju, bass bulat.',
+            sub: { hpf: 32, lpf: 100, gain: 1, eqF: 70, eqG: 4, eqQ: 1, cT: -16, cR: 3, cM: 2 },
+            mid: { hpf: 100, lpf: 20000, gain: 0, cT: -14, cR: 2.5, cM: 1.5 },
+            eq: [{ f: 130, g: 2.5, q: 1.2 }, { f: 3200, g: 2.5, q: 1 }, { f: 8000, g: 1, q: 0.8 }] },
+        vokal: { desc: 'Suara orang jelas, bass dikurangi. Cocok buat podcast.',
+            sub: { hpf: 80, lpf: 120, gain: -3, eqF: 100, eqG: -2, eqQ: 1, cT: 0, cR: 1, cM: 0 },
+            mid: { hpf: 120, lpf: 20000, gain: 0, cT: -18, cR: 3, cM: 2 },
+            eq: [{ f: 300, g: -2, q: 1 }, { f: 3000, g: 3, q: 1 }, { f: 6000, g: 1, q: 0.8 }] }
+    };
+
+    function presetToConfig(p) {
+        return {
+            knobs: {
+                'knob-sub-hpf': p.sub.hpf, 'knob-sub-lpf': p.sub.lpf, 'knob-sub-gain': p.sub.gain,
+                'knob-sub-eq-freq': p.sub.eqF, 'knob-sub-eq-gain': p.sub.eqG, 'knob-sub-eq-q': p.sub.eqQ,
+                'knob-sub-comp-thresh': p.sub.cT, 'knob-sub-comp-ratio': p.sub.cR, 'knob-sub-comp-gain': p.sub.cM,
+                'knob-mid-hpf': p.mid.hpf, 'knob-mid-lpf': p.mid.lpf, 'knob-mid-gain': p.mid.gain,
+                'knob-mid-comp-thresh': p.mid.cT, 'knob-mid-comp-ratio': p.mid.cR, 'knob-mid-comp-gain': p.mid.cM,
+                'knob-m-bass': 0, 'knob-m-treble': 0, 'knob-m-loud': 0, 'knob-m-sub': 0, 'knob-m-punch': 0, 'knob-m-warm': 0
+            },
+            bands: MST_BANDS.map(() => 0),
+            sel: {
+                'select-sub-hpf-slope': '24', 'select-sub-lpf-slope': '24', 'select-sub-chan': 'stereo',
+                'select-mid-hpf-slope': '24', 'select-mid-lpf-slope': '24', 'select-mid-chan': 'stereo'
+            },
+            midEQ: p.eq.map(e => ({ freq: e.f, gain: e.g, q: e.q })),
+            byp: [false, false]
+        };
+    }
+
+    function setCompBypass(which, on) {
+        const btn = document.getElementById('bypass-' + which + '-comp');
+        currentParams[which + 'CompBypassed'] = on;
+        btn.classList.toggle('bypassed', on);
+        const dry = which === 'sub' ? subCompDry : midCompDry, wet = which === 'sub' ? subCompWet : midCompWet;
+        dry.gain.setTargetAtTime(on ? 1 : 0, ctx.currentTime, 0.05);
+        wet.gain.setTargetAtTime(on ? 0 : 1, ctx.currentTime, 0.05);
+    }
+    function setMute(which, on) {
+        const btn = document.getElementById('mute-' + which);
+        currentParams[which + 'IsMuted'] = on;
+        btn.classList.toggle('active', on);
+        (which === 'sub' ? subMute : midMute).gain.setTargetAtTime(on ? 0 : 1, ctx.currentTime, 0.05);
+    }
+
+    function applyConfig(cfg) {
+        applyingConfig = true;
+        try {
+            Object.keys(cfg.knobs || {}).forEach(id => {
+                const v = Number(cfg.knobs[id]);
+                if (document.getElementById(id) && isFinite(v)) setKnobValue(id, v);
+            });
+            Object.keys(cfg.sel || {}).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.value = String(cfg.sel[id]); el.dispatchEvent(new Event('change')); }
+            });
+            if (Array.isArray(cfg.midEQ) && cfg.midEQ.length === 3) {
+                currentParams.midEQParams = cfg.midEQ.map(e => ({ freq: Number(e.freq), gain: Number(e.gain), q: Number(e.q) }));
+                const t = ctx.currentTime;
+                midEQ.forEach((n, i) => {
+                    const p = currentParams.midEQParams[i];
+                    n.frequency.setTargetAtTime(p.freq, t, T_CONST); n.gain.setTargetAtTime(p.gain, t, T_CONST); n.Q.setTargetAtTime(p.q, t, T_CONST);
+                });
+                const idx = cfg.activeMidEQ >= 0 && cfg.activeMidEQ <= 2 ? cfg.activeMidEQ : currentParams.activeMidEQ;
+                switchMidEQ(idx);
+            }
+            if (Array.isArray(cfg.bands) && cfg.bands.length === MST_BANDS.length) setBands(cfg.bands);
+            if (Array.isArray(cfg.byp)) { setCompBypass('sub', !!cfg.byp[0]); setCompBypass('mid', !!cfg.byp[1]); }
+            if (Array.isArray(cfg.mute)) { setMute('sub', !!cfg.mute[0]); setMute('mid', !!cfg.mute[1]); }
+        } finally {
+            applyingConfig = false;
+        }
+    }
+
+    function highlightPreset() {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === activePreset));
+        document.getElementById('preset-desc').textContent = activePreset && PRESETS[activePreset]
+            ? PRESETS[activePreset].desc + ' (titik awal, sesuaikan sama speaker lu)'
+            : (activePreset && activePreset.indexOf('u:') === 0 ? 'Preset kamu: ' + activePreset.slice(2) : 'Pengaturan manual.');
+    }
+    function markCustom() {
+        if (applyingConfig || !activePreset) return;
+        activePreset = null;
+        highlightPreset();
+    }
+    function applyPreset(key) {
+        if (!PRESETS[key]) return;
+        applyConfig(presetToConfig(PRESETS[key]));
+        activePreset = key;
+        highlightPreset();
+    }
+    document.querySelectorAll('.preset-btn').forEach(b => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
+
+    // ---- EQ 10 band
+    const geqEl = document.getElementById('geq');
+    const geqInputs = [], geqVals = [];
+    const fmtDb = v => (v > 0 ? '+' : '') + Number(v).toFixed(1);
+    MST_BANDS.forEach((f, i) => {
+        const col = document.createElement('div'); col.className = 'geq-col';
+        const val = document.createElement('span'); val.className = 'geq-val'; val.textContent = '0';
+        const inp = document.createElement('input'); inp.type = 'range'; inp.min = -12; inp.max = 12; inp.step = 0.5; inp.value = 0;
+        inp.setAttribute('aria-label', 'EQ ' + f + ' Hz');
+        const lb = document.createElement('span'); lb.className = 'geq-f'; lb.textContent = f >= 1000 ? (f / 1000) + 'k' : String(f);
+        inp.addEventListener('input', () => {
+            const v = parseFloat(inp.value); mstBandVals[i] = v; val.textContent = fmtDb(v).replace('.0', ''); refreshMaster(); markCustom();
+        });
+        col.appendChild(val); col.appendChild(inp); col.appendChild(lb); geqEl.appendChild(col);
+        geqInputs.push(inp); geqVals.push(val);
+    });
+    function setBands(arr) {
+        arr.forEach((v, i) => {
+            v = Math.max(-12, Math.min(12, Number(v) || 0));
+            mstBandVals[i] = v; geqInputs[i].value = v; geqVals[i].textContent = fmtDb(v).replace('.0', '');
+        });
+        refreshMaster();
+    }
+    document.getElementById('geq-reset').addEventListener('click', () => { setBands(MST_BANDS.map(() => 0)); markCustom(); });
+
+    // ---- preset buatan sendiri
+    const UP_KEY = 'aggrp.userPresets.v1';
+    let userPresets = [];
+    try {
+        const r = JSON.parse(localStorage.getItem(UP_KEY) || '[]');
+        if (Array.isArray(r)) userPresets = r.filter(x => x && typeof x.name === 'string' && x.cfg && typeof x.cfg === 'object').slice(0, 12);
+    } catch (e) { /* abaikan */ }
+    function saveUserPresets() { try { localStorage.setItem(UP_KEY, JSON.stringify(userPresets)); } catch (e) { /* abaikan */ } }
+    const upList = document.getElementById('user-presets');
+    function renderUserPresets() {
+        upList.textContent = '';
+        userPresets.forEach(p => {
+            const w = document.createElement('div'); w.className = 'up-item';
+            const b = document.createElement('button'); b.className = 'btn preset-btn up-btn'; b.dataset.preset = 'u:' + p.name; b.textContent = p.name;
+            b.addEventListener('click', () => { applyConfig(p.cfg); activePreset = 'u:' + p.name; highlightPreset(); });
+            const x = document.createElement('button'); x.className = 'btn up-del'; x.textContent = '\u00d7'; x.setAttribute('aria-label', 'Hapus ' + p.name);
+            x.addEventListener('click', () => {
+                if (!confirm('Hapus preset "' + p.name + '"?')) return;
+                userPresets = userPresets.filter(q => q.name !== p.name); saveUserPresets();
+                if (activePreset === 'u:' + p.name) activePreset = null;
+                renderUserPresets(); highlightPreset();
+            });
+            w.appendChild(b); w.appendChild(x); upList.appendChild(w);
+        });
+    }
+    document.getElementById('up-save').addEventListener('click', () => {
+        const inp = document.getElementById('up-name');
+        const name = inp.value.trim().slice(0, 20);
+        if (!name) { inp.focus(); return; }
+        const sn = snapshot();
+        const cfg = { knobs: sn.knobs, sel: sn.sel, midEQ: sn.midEQ, activeMidEQ: sn.activeMidEQ, byp: sn.byp, bands: sn.bands };
+        const i = userPresets.findIndex(q => q.name === name);
+        if (i >= 0) userPresets[i] = { name: name, cfg: cfg };
+        else {
+            if (userPresets.length >= 12) { document.getElementById('preset-desc').textContent = 'Maksimal 12 preset. Hapus salah satu dulu.'; return; }
+            userPresets.push({ name: name, cfg: cfg });
+        }
+        saveUserPresets(); inp.value = ''; inp.blur();
+        activePreset = 'u:' + name; renderUserPresets(); highlightPreset();
+    });
+    renderUserPresets();
+
+    // ---- simpan / balikin pengaturan (biar nggak balik default tiap app dibuka)
+    const LS_KEY = 'aggrp.dsp.v2';
+    function snapshot() {
+        const knobs = {};
+        document.querySelectorAll('.knob').forEach(k => { if (!k.id.startsWith('knob-mid-eq-')) knobs[k.id] = parseFloat(k.getAttribute('data-val')); });
+        const sel = {};
+        document.querySelectorAll('select').forEach(x => { sel[x.id] = x.value; });
+        return {
+            knobs, sel,
+            midEQ: currentParams.midEQParams.map(e => ({ freq: e.freq, gain: e.gain, q: e.q })),
+            activeMidEQ: currentParams.activeMidEQ,
+            bands: mstBandVals.slice(),
+            byp: [currentParams.subCompBypassed, currentParams.midCompBypassed],
+            mute: [currentParams.subIsMuted, currentParams.midIsMuted],
+            preset: activePreset
+        };
+    }
+    let lastSaved = '';
+    function saveIfChanged() {
+        try {
+            const j = JSON.stringify(snapshot());
+            if (j !== lastSaved) { localStorage.setItem(LS_KEY, j); lastSaved = j; }
+        } catch (e) { /* storage bisa gagal, abaikan */ }
+    }
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+            const saved = JSON.parse(raw);
+            applyConfig(saved);
+            activePreset = typeof saved.preset === 'string' && (PRESETS[saved.preset] || (saved.preset.indexOf('u:') === 0 && userPresets.some(q => 'u:' + q.name === saved.preset))) ? saved.preset : null;
+        }
+    } catch (e) { /* abaikan */ }
+    highlightPreset();
+    try { lastSaved = JSON.stringify(snapshot()); } catch (e) { lastSaved = ''; }
+    setInterval(saveIfChanged, 500);
+
+    // ---- System Mode (cuma jalan di APK)
+    const btnSys = document.getElementById('btn-system');
+    const sysStatus = document.getElementById('sys-status');
+    const SYS_HINT = 'Efek EQ, bass, dan kompresor ini jalan di semua aplikasi (YouTube, Spotify, dll). ' +
+        'Nyalain, terus buka YouTube. Spektrum dan VU cuma muncul buat file yang diputar di app ini, ' +
+        'bukan buat YouTube (Android nggak ngasih akses).';
+    function getDsp() { return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Dsp) || null; }
+    function isNativeApp() { return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()); }
+
+    function setSysUI(on, msg, isErr) {
+        systemOn = on;
+        btnSys.classList.toggle('on', on);
+        btnSys.textContent = 'System Mode: ' + (on ? 'ON' : 'OFF');
+        sysStatus.textContent = msg;
+        sysStatus.classList.toggle('err', !!isErr);
+        if (sourceNode) applyEngineRouting();
+    }
+    let sysBusy = false, lastSysSig = '';
+    async function sysPush(force) {
+        if (!systemOn || sysBusy) return;
+        const dsp = getDsp(); if (!dsp) return;
+        const st = readState();
+        const sig = JSON.stringify(st);
+        if (!force && sig === lastSysSig) return;
+        sysBusy = true;
+        try {
+            const r = await dsp.update(buildSystemParams(st));
+            if (r && r.ok) lastSysSig = sig;
+            else setSysUI(false, 'Efek berhenti: ' + (r && r.status ? r.status : 'tidak diketahui') + '. Tekan lagi buat nyalain.', true);
+        } catch (e) {
+            setSysUI(false, 'Error update: ' + (e && e.message ? e.message : e), true);
+        } finally { sysBusy = false; }
+    }
+    async function sysEnable() {
+        const dsp = getDsp();
+        if (!isNativeApp() || !dsp) {
+            setSysUI(false, 'Fitur ini cuma jalan di aplikasi APK, bukan di browser.', true);
+            return;
+        }
+        btnSys.disabled = true;
+        sysStatus.classList.remove('err'); sysStatus.textContent = 'Menyalakan...';
+        try {
+            const r = await dsp.start({ cutoffs: SYS_CUTOFFS });
+            if (!r || !r.ok) { setSysUI(false, 'Gagal: ' + (r && r.status ? r.status : 'tidak diketahui'), true); return; }
+            setSysUI(true, 'Aktif. Buka YouTube dan putar lagu, efeknya ikut jalan. ' + (r.status && r.status !== 'OK' ? '(' + r.status + ')' : ''));
+            lastSysSig = '';
+            await sysPush(true);
+        } catch (e) {
+            setSysUI(false, 'Error: ' + (e && e.message ? e.message : e), true);
+        } finally { btnSys.disabled = false; }
+    }
+    async function sysDisable() {
+        const dsp = getDsp();
+        try { if (dsp) await dsp.stop(); } catch (e) { /* abaikan */ }
+        setSysUI(false, 'Mati. Suara balik normal.');
+    }
+    btnSys.addEventListener('click', () => { if (systemOn) sysDisable(); else sysEnable(); });
+    setInterval(() => { if (systemOn) sysPush(false); }, 120);
+
+    async function sysSyncFromNative() {
+        const dsp = getDsp(); if (!dsp || !isNativeApp()) return;
+        try {
+            const r = await dsp.status();
+            if (r && r.running && !systemOn) { setSysUI(true, 'Aktif (lanjut dari sebelumnya).'); lastSysSig = ''; sysPush(true); }
+            else if (!(r && r.running) && systemOn) setSysUI(false, 'Efek dimatikan dari notifikasi atau sistem. Tekan lagi buat nyalain.', true);
+        } catch (e) { /* abaikan */ }
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) sysSyncFromNative(); });
+    if (isNativeApp()) { sysStatus.textContent = SYS_HINT; sysSyncFromNative(); }
+    else sysStatus.textContent = 'Mode ini aktif di aplikasi APK. Di browser, app ini jalan sebagai player biasa.';
+
+    // ---- gambar kurva dari model (dipakai analyzer)
+    function drawCurve(dbArr, color, width) {
+        if (!dbArr) return;
+        cctx.beginPath();
+        dbArr.forEach((db, i) => {
+            const x = logPos(MODEL_FREQS[i]);
+            const y = Math.max(0, Math.min(canvas.height, canvas.height - ((db + 48) / 72) * canvas.height));
+            if (i === 0) cctx.moveTo(x, y); else cctx.lineTo(x, y);
+        });
+        cctx.strokeStyle = color; cctx.lineWidth = width; cctx.stroke();
+    }
+    function drawLegend() {
+        cctx.font = 'bold 10px sans-serif';
+        [['Sub', 'rgba(100, 180, 255, 0.9)'], ['Mid', 'rgba(255, 200, 50, 0.9)'], ['Total', 'rgba(166, 227, 161, 1)']].forEach((it, i) => {
+            cctx.fillStyle = it[1]; cctx.fillText(it[0], canvas.width - 44, 14 + i * 13);
+        });
+    }
+
     // --- 4. GRAPHIC ANALYZER & VU METERS ---
     const canvas = document.getElementById('analyzer'); const cctx = canvas.getContext('2d');
     function resizeCanvas() { 
@@ -835,7 +1474,7 @@
             let label = f >= 1000 ? (f/1000)+'k' : f; cctx.fillText(label, x + 5, canvas.height - 5);
         });
         [-48, -36, -24, -12, 0, 12].forEach(db => {
-            const y = canvas.height - ((db + 48) / 60) * canvas.height; cctx.moveTo(0, y); cctx.lineTo(canvas.width, y);
+            const y = canvas.height - ((db + 48) / 72) * canvas.height; cctx.moveTo(0, y); cctx.lineTo(canvas.width, y);
             cctx.fillStyle = '#555'; cctx.fillText(db, 5, y - 5);
         });
         cctx.stroke();
@@ -853,7 +1492,7 @@
         });
         let path = [];
         for(let i=0; i<points; i++) {
-            let db = 20 * Math.log10(totalMag[i]); let y = canvas.height - ((db + 48) / 60) * canvas.height;
+            let db = 20 * Math.log10(totalMag[i]); let y = canvas.height - ((db + 48) / 72) * canvas.height;
             path.push({ x: logPos(freqs[i]), y: Math.max(0, Math.min(canvas.height, y)) });
         }
         return path;
@@ -875,12 +1514,11 @@
         cctx.lineTo(canvas.width, canvas.height); cctx.fillStyle = 'rgba(25, 60, 110, 0.4)'; cctx.fill();
         cctx.strokeStyle = 'rgba(50, 120, 200, 0.6)'; cctx.lineWidth = 1; cctx.stroke();
 
-        let subPath = getFilterCurve([...subHPF, ...subLPF, subEQ], currentParams.subIsMuted);
-        if (subPath.length > 0) { cctx.beginPath(); cctx.moveTo(subPath[0].x, subPath[0].y); subPath.forEach(pt => cctx.lineTo(pt.x, pt.y)); cctx.strokeStyle = 'rgba(100, 180, 255, 0.9)'; cctx.lineWidth = 2; cctx.stroke(); }
-        
-        // Kalkulasi Analyzer merespons seluruh 3 band Mid EQ
-        let midPath = getFilterCurve([...midHPF, ...midLPF, ...midEQ], currentParams.midIsMuted);
-        if (midPath.length > 0) { cctx.beginPath(); cctx.moveTo(midPath[0].x, midPath[0].y); midPath.forEach(pt => cctx.lineTo(pt.x, pt.y)); cctx.strokeStyle = 'rgba(255, 200, 50, 0.9)'; cctx.lineWidth = 2; cctx.stroke(); }
+        const model = getModel();
+        drawCurve(model.sub, 'rgba(100, 180, 255, 0.9)', 2);
+        drawCurve(model.mid, 'rgba(255, 200, 50, 0.9)', 2);
+        drawCurve(model.sum, 'rgba(166, 227, 161, 1)', 2.5);
+        drawLegend();
 
         vuAnalyserL.getFloatTimeDomainData(timeDataL); vuAnalyserR.getFloatTimeDomainData(timeDataR);
         let peakL = 0, peakR = 0;
