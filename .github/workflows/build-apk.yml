@@ -19,10 +19,449 @@ jobs:
           java-version: 17
       - name: Build APK
         run: |
+          set -e
           mkdir -p www
           cp index.html www/index.html
           npm install
           npx cap add android
+          PKG=android/app/src/main/java/com/mnsproject/mnsdsp
+          mkdir -p $PKG
+          mkdir -p /tmp/native
+          cat > $PKG/DspEngine.java <<'MNS_EOF'
+          package com.mnsproject.mnsdsp;
+
+          import android.media.audiofx.AudioEffect;
+          import android.media.audiofx.DynamicsProcessing;
+          import android.os.Build;
+
+          /**
+           * Efek audio global (semua aplikasi, termasuk YouTube) berbasis DynamicsProcessing.
+           *
+           * Susunan: Pre-EQ (banyak band, bentuk kurvanya dihitung di HTML) -> MBC 2 band
+           * (Sub / Mid-High, titik potong = LPF Sub) -> Limiter pengaman.
+           */
+          public final class DspEngine {
+
+              private static final float MIN_GAIN_DB = -60f;
+              private static final float MAX_GAIN_DB = 24f;
+
+              private static DynamicsProcessing dp;
+              private static float[] cutoffs = new float[0];
+              private static float[] lastGains = new float[0];
+              private static float[] lastMbc = null;
+
+              private DspEngine() {}
+
+              public static synchronized boolean isRunning() {
+                  return dp != null;
+              }
+
+              /** @return "OK" kalau jalan, selain itu pesan error yang bisa ditampilkan ke user. */
+              public static synchronized String start(float[] bandCutoffs) {
+                  if (Build.VERSION.SDK_INT < 28) {
+                      return "Butuh Android 9 ke atas";
+                  }
+                  stop();
+                  try {
+                      return startInternal(bandCutoffs);
+                  } catch (Throwable t) {
+                      stop();
+                      return "Gagal: " + t.getClass().getSimpleName() + " " + t.getMessage();
+                  }
+              }
+
+              private static String startInternal(float[] bandCutoffs) {
+                  final int n = bandCutoffs.length;
+                  if (n < 2) {
+                      return "Data band kosong";
+                  }
+
+                  DynamicsProcessing.Config.Builder builder = new DynamicsProcessing.Config.Builder(
+                          DynamicsProcessing.VARIANT_FAVOR_FREQUENCY_RESOLUTION,
+                          2,          // stereo
+                          true, n,    // pre-EQ
+                          true, 2,    // MBC: band 0 = Sub, band 1 = Mid/High
+                          false, 0,   // post-EQ tidak dipakai
+                          true);      // limiter
+                  DynamicsProcessing.Config cfg = builder.build();
+
+                  for (int i = 0; i < n; i++) {
+                      cfg.setPreEqBandAllChannelsTo(i, new DynamicsProcessing.EqBand(true, bandCutoffs[i], 0f));
+                  }
+                  cfg.setMbcBandAllChannelsTo(0, mbcBand(100f, 0f, 1f, 12f, 200f, 0f));
+                  cfg.setMbcBandAllChannelsTo(1, mbcBand(20000f, 0f, 1f, 6f, 150f, 0f));
+                  cfg.setLimiterAllChannelsTo(new DynamicsProcessing.Limiter(true, true, 0, 5f, 80f, 20f, -1f, 0f));
+
+                  // sessionId 0 = output mix (semua aplikasi)
+                  DynamicsProcessing effect = new DynamicsProcessing(0, 0, cfg);
+                  int r = effect.setEnabled(true);
+                  if (r != AudioEffect.SUCCESS) {
+                      effect.release();
+                      return "Efek gagal diaktifkan (kode " + r + ")";
+                  }
+                  if (!effect.hasControl()) {
+                      effect.release();
+                      return "Efek diblok sistem HP (nggak dapat kontrol)";
+                  }
+
+                  dp = effect;
+                  cutoffs = bandCutoffs.clone();
+                  lastGains = new float[n];
+                  lastMbc = null;
+                  return "OK";
+              }
+
+              /**
+               * @param gains  gain (dB) tiap band Pre-EQ, panjang sama dengan cutoffs saat start
+               * @param xover  titik potong Sub / Mid (Hz)
+               * @param sub    {threshold dB, ratio, attack ms, release ms, post gain dB}
+               * @param mid    {threshold dB, ratio, attack ms, release ms, post gain dB}
+               */
+              public static synchronized String update(float[] gains, float xover, float[] sub, float[] mid) {
+                  if (dp == null) {
+                      return "Belum aktif";
+                  }
+                  try {
+                      final int n = Math.min(gains.length, cutoffs.length);
+                      for (int i = 0; i < n; i++) {
+                          float g = clamp(gains[i], MIN_GAIN_DB, MAX_GAIN_DB);
+                          if (Math.abs(g - lastGains[i]) > 0.05f) {
+                              dp.setPreEqBandAllChannelsTo(i, new DynamicsProcessing.EqBand(true, cutoffs[i], g));
+                              lastGains[i] = g;
+                          }
+                      }
+
+                      float[] m = new float[] {
+                              xover,
+                              sub[0], sub[1], sub[2], sub[3], sub[4],
+                              mid[0], mid[1], mid[2], mid[3], mid[4]
+                      };
+                      if (!same(m, lastMbc)) {
+                          float x = clamp(xover, 20f, 2000f);
+                          dp.setMbcBandAllChannelsTo(0, mbcBand(x, sub[0], sub[1], sub[2], sub[3], sub[4]));
+                          dp.setMbcBandAllChannelsTo(1, mbcBand(20000f, mid[0], mid[1], mid[2], mid[3], mid[4]));
+                          lastMbc = m;
+                      }
+                      return "OK";
+                  } catch (Throwable t) {
+                      return "Gagal update: " + t.getClass().getSimpleName() + " " + t.getMessage();
+                  }
+              }
+
+              private static DynamicsProcessing.MbcBand mbcBand(float cutoff, float threshold, float ratio,
+                                                                float attackMs, float releaseMs, float postGainDb) {
+                  return new DynamicsProcessing.MbcBand(
+                          true,
+                          cutoff,
+                          clamp(attackMs, 0.5f, 200f),
+                          clamp(releaseMs, 10f, 2000f),
+                          clamp(ratio, 1f, 20f),
+                          clamp(threshold, -60f, 0f),
+                          10f,        // knee (dB)
+                          -90f,       // noise gate mati
+                          1f,         // expander mati
+                          0f,         // pre gain
+                          clamp(postGainDb, -80f, 36f));
+              }
+
+              public static synchronized void stop() {
+                  if (dp != null) {
+                      try {
+                          dp.setEnabled(false);
+                      } catch (Throwable ignored) {
+                      }
+                      try {
+                          dp.release();
+                      } catch (Throwable ignored) {
+                      }
+                      dp = null;
+                  }
+                  cutoffs = new float[0];
+                  lastGains = new float[0];
+                  lastMbc = null;
+              }
+
+              private static boolean same(float[] a, float[] b) {
+                  if (b == null || a.length != b.length) {
+                      return false;
+                  }
+                  for (int i = 0; i < a.length; i++) {
+                      if (Math.abs(a[i] - b[i]) > 0.001f) {
+                          return false;
+                      }
+                  }
+                  return true;
+              }
+
+              private static float clamp(float v, float lo, float hi) {
+                  if (Float.isNaN(v)) {
+                      return lo;
+                  }
+                  return Math.max(lo, Math.min(hi, v));
+              }
+          }
+          MNS_EOF
+          cat > $PKG/DspPlugin.java <<'MNS_EOF'
+          package com.mnsproject.mnsdsp;
+
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.pm.PackageManager;
+          import android.os.Build;
+          import com.getcapacitor.JSArray;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import org.json.JSONException;
+
+          /** Jembatan HTML -> efek audio global. Dipanggil dari JS: Capacitor.Plugins.Dsp.* */
+          @CapacitorPlugin(name = "Dsp")
+          public class DspPlugin extends Plugin {
+
+              private static final String POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS";
+
+              @PluginMethod
+              public void start(PluginCall call) {
+                  try {
+                      float[] cutoffs = toFloats(call.getArray("cutoffs"));
+                      askNotificationPermission();
+
+                      String status = DspEngine.start(cutoffs);
+                      boolean ok = "OK".equals(status);
+                      if (ok) {
+                          try {
+                              startKeepAliveService();
+                          } catch (Throwable t) {
+                              status = "OK, tapi service latar belakang gagal: " + t.getMessage();
+                          }
+                      }
+                      JSObject ret = new JSObject();
+                      ret.put("ok", ok);
+                      ret.put("status", status);
+                      call.resolve(ret);
+                  } catch (Throwable t) {
+                      call.reject("start gagal: " + t.getMessage());
+                  }
+              }
+
+              @PluginMethod
+              public void update(PluginCall call) {
+                  try {
+                      float[] gains = toFloats(call.getArray("gains"));
+                      float xover = num(call, "xover", 100);
+                      float[] sub = new float[] {
+                              num(call, "subT", 0), num(call, "subR", 1), num(call, "subAtk", 12),
+                              num(call, "subRel", 200), num(call, "subPost", 0)
+                      };
+                      float[] mid = new float[] {
+                              num(call, "midT", 0), num(call, "midR", 1), num(call, "midAtk", 6),
+                              num(call, "midRel", 150), num(call, "midPost", 0)
+                      };
+                      String status = DspEngine.update(gains, xover, sub, mid);
+                      JSObject ret = new JSObject();
+                      ret.put("ok", "OK".equals(status));
+                      ret.put("status", status);
+                      call.resolve(ret);
+                  } catch (Throwable t) {
+                      call.reject("update gagal: " + t.getMessage());
+                  }
+              }
+
+              @PluginMethod
+              public void stop(PluginCall call) {
+                  DspEngine.stop();
+                  try {
+                      getContext().stopService(new Intent(getContext(), DspService.class));
+                  } catch (Throwable ignored) {
+                  }
+                  JSObject ret = new JSObject();
+                  ret.put("ok", true);
+                  call.resolve(ret);
+              }
+
+              @PluginMethod
+              public void status(PluginCall call) {
+                  JSObject ret = new JSObject();
+                  ret.put("running", DspEngine.isRunning());
+                  call.resolve(ret);
+              }
+
+              private void startKeepAliveService() {
+                  Context c = getContext();
+                  Intent i = new Intent(c, DspService.class);
+                  if (Build.VERSION.SDK_INT >= 26) {
+                      c.startForegroundService(i);
+                  } else {
+                      c.startService(i);
+                  }
+              }
+
+              private void askNotificationPermission() {
+                  if (Build.VERSION.SDK_INT < 33 || getActivity() == null) {
+                      return;
+                  }
+                  if (getContext().checkSelfPermission(POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                      return;
+                  }
+                  getActivity().runOnUiThread(new Runnable() {
+                      @Override
+                      public void run() {
+                          getActivity().requestPermissions(new String[] {POST_NOTIFICATIONS}, 4242);
+                      }
+                  });
+              }
+
+              private static float[] toFloats(JSArray a) throws JSONException {
+                  if (a == null) {
+                      throw new JSONException("array kosong");
+                  }
+                  float[] f = new float[a.length()];
+                  for (int i = 0; i < f.length; i++) {
+                      f[i] = (float) a.getDouble(i);
+                  }
+                  return f;
+              }
+
+              private static float num(PluginCall call, String key, double def) {
+                  Double v = call.getDouble(key, def);
+                  return v == null ? (float) def : v.floatValue();
+              }
+          }
+          MNS_EOF
+          cat > $PKG/DspService.java <<'MNS_EOF'
+          package com.mnsproject.mnsdsp;
+
+          import android.app.Notification;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.PendingIntent;
+          import android.app.Service;
+          import android.content.Intent;
+          import android.content.pm.ServiceInfo;
+          import android.os.Build;
+          import android.os.IBinder;
+
+          /**
+           * Service latar depan supaya proses app tetap hidup dan efek audio global
+           * nggak ikut mati waktu app dibuka-tutup atau pindah ke YouTube.
+           */
+          public class DspService extends Service {
+
+              static final String ACTION_STOP = "com.mnsproject.mnsdsp.STOP_DSP";
+              private static final String CHANNEL_ID = "mns_dsp";
+              private static final int NOTIF_ID = 4201;
+
+              @Override
+              public IBinder onBind(Intent intent) {
+                  return null;
+              }
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+                      DspEngine.stop();
+                      stopForeground(true);
+                      stopSelf();
+                      return START_NOT_STICKY;
+                  }
+
+                  Notification n = buildNotification();
+                  if (Build.VERSION.SDK_INT >= 29) {
+                      startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+                  } else {
+                      startForeground(NOTIF_ID, n);
+                  }
+                  return START_NOT_STICKY;
+              }
+
+              @Override
+              public void onDestroy() {
+                  DspEngine.stop();
+                  super.onDestroy();
+              }
+
+              @SuppressWarnings("deprecation")
+              private Notification buildNotification() {
+                  if (Build.VERSION.SDK_INT >= 26) {
+                      NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "DSP aktif", NotificationManager.IMPORTANCE_LOW);
+                      NotificationManager nm = getSystemService(NotificationManager.class);
+                      if (nm != null) {
+                          nm.createNotificationChannel(ch);
+                      }
+                  }
+
+                  int immutable = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
+
+                  Intent open = new Intent(this, MainActivity.class);
+                  open.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                  PendingIntent openPi = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | immutable);
+
+                  Intent stop = new Intent(this, DspService.class);
+                  stop.setAction(ACTION_STOP);
+                  PendingIntent stopPi = PendingIntent.getService(this, 1, stop, PendingIntent.FLAG_UPDATE_CURRENT | immutable);
+
+                  Notification.Builder nb = Build.VERSION.SDK_INT >= 26
+                          ? new Notification.Builder(this, CHANNEL_ID)
+                          : new Notification.Builder(this);
+
+                  CharSequence appName = getApplicationInfo().loadLabel(getPackageManager());
+                  nb.setSmallIcon(android.R.drawable.ic_media_play)
+                          .setContentTitle(appName + " aktif")
+                          .setContentText("EQ dan bass jalan di semua aplikasi")
+                          .setContentIntent(openPi)
+                          .setOngoing(true)
+                          .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Matikan", stopPi);
+                  return nb.build();
+              }
+          }
+          MNS_EOF
+          cat > $PKG/MainActivity.java <<'MNS_EOF'
+          package com.mnsproject.mnsdsp;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(DspPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          MNS_EOF
+          cat > /tmp/native/patch_manifest.py <<'MNS_EOF'
+          import sys
+
+          path = sys.argv[1] if len(sys.argv) > 1 else "android/app/src/main/AndroidManifest.xml"
+          with open(path, encoding="utf-8") as f:
+              s = f.read()
+
+          perms = [
+              "android.permission.MODIFY_AUDIO_SETTINGS",
+              "android.permission.FOREGROUND_SERVICE",
+              "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+              "android.permission.POST_NOTIFICATIONS",
+          ]
+          add = "".join(
+              '    <uses-permission android:name="%s" />\n' % p for p in perms if p not in s
+          )
+          if add:
+              s = s.replace("</manifest>", add + "</manifest>")
+
+          service = (
+              '        <service android:name=".DspService" android:exported="false"'
+              ' android:foregroundServiceType="mediaPlayback" />\n'
+          )
+          if "DspService" not in s:
+              s = s.replace("</application>", service + "    </application>")
+
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(s)
+          print("manifest patched")
+          MNS_EOF
+          python3 /tmp/native/patch_manifest.py android/app/src/main/AndroidManifest.xml
           npx cap sync android
           cd android
           chmod +x gradlew
